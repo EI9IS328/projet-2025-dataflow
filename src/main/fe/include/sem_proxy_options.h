@@ -20,6 +20,7 @@ class SemProxyOptions
   float timemax = 1.5;
   bool autodt = false;
   std::string sismoPoints = "";
+  int snap_time_interval = 150;
   // sponge boundaries parameters
   float boundaries_size = 0;
   bool surface_sponge = false;
@@ -74,5 +75,7 @@ class SemProxyOptions
         cxxopts::value<bool>(o.isModelOnNodes))(
         "is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))
         ("sismo-points", "Path to sismo receptor points to save", cxxopts::value<std::string>(o.sismoPoints));
+        "is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))(
+        "sd,snapshot-delay", "Delay between each snapshot (step (ms) )", cxxopts::value<int>(o.snap_time_interval));
   }
 };
