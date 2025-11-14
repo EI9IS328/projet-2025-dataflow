@@ -20,9 +20,38 @@
 
 using namespace SourceAndReceiverUtils;
 
+void parseSismoPoints(std::string path, std::vector<std::array<int, 3>> * resultVector) {
+  std::ifstream file(path);
+  if (!file.is_open()) {
+    std::cerr << "Impossible to open the --sismo-points provided path ! " << std::endl;
+    return;
+  }
+
+  std::string line;
+  while (std::getline(file, line)) {
+    std::istringstream lineStringStream(line);
+    std::array<int, 3> currentCoordinates;
+    std::string token;
+    int index = 0;
+    while (std::getline(lineStringStream, token, ' ')) {
+      currentCoordinates[index] = std::stoi(token);
+      index += 1;
+    }
+    if (index == 3) { // ensuring we parsed 3 values in this iteration of the loop
+      resultVector->push_back(currentCoordinates);
+    }
+  }
+  
+}
+
 SEMproxy::SEMproxy(const SemProxyOptions& opt)
 {
+  if (opt.sismoPoints.size() > 0) {
+    // storing points in this->sismoPoints;
+    parseSismoPoints(opt.sismoPoints, &sismoPoints);   
+  }
   const int order = opt.order;
+  snap_time_interval_ = opt.snap_time_interval;
   nb_elements_[0] = opt.ex;
   nb_elements_[1] = opt.ey;
   nb_elements_[2] = opt.ez;
@@ -145,6 +174,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
 void SEMproxy::run()
 {
+  std::cout<<"running sem proxy"<<std::endl;
   time_point<system_clock> startComputeTime, startOutputTime, totalComputeTime,
       totalOutputTime;
 
@@ -194,6 +224,11 @@ void SEMproxy::run()
     solverData.m_i2 = tmp;
 
     totalOutputTime += system_clock::now() - startOutputTime;
+
+    if (indexTimeSample % snap_time_interval_ == 0){
+      saveSnapshot(indexTimeSample);
+    }
+
   }
 
   float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)
@@ -393,4 +428,8 @@ float SEMproxy::find_cfl_dt(float cfl_factor)
   float dt = cfl_factor * min_spacing / (sqrtDim3 * v_max);
 
   return dt;
+}
+
+void SEMproxy::saveSnapshot(int timestep){
+  
 }
