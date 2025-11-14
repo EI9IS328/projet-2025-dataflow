@@ -51,6 +51,9 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   cout << boolalpha;
   bool isElastic = isElastic_;
 
+
+  is_snapshots_ =  opt.isSnapshotOn;
+
   const SolverFactory::methodType methodType = getMethod(opt.method);
   const SolverFactory::implemType implemType = getImplem(opt.implem);
   const SolverFactory::meshType meshType = getMesh(opt.mesh);
@@ -240,6 +243,8 @@ void SEMproxy::init_source()
   int lx = domain_size_[0];
   int ly = domain_size_[1];
   int lz = domain_size_[2];
+
+
 
   // Get source element index
 
