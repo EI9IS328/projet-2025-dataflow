@@ -430,6 +430,70 @@ float SEMproxy::find_cfl_dt(float cfl_factor)
   return dt;
 }
 
-void SEMproxy::saveSnapshot(int timestep){
-  
+char* float_to_cstring(float f) {
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(1) << f;
+
+    std::string tmp = oss.str();
+    std::replace(tmp.begin(), tmp.end(), '.', ',');
+
+    // Allouer un buffer char*
+    char* result = new char[tmp.size() + 1];
+    std::strcpy(result, tmp.c_str());
+    return result;
 }
+
+void SEMproxy::saveSnapshot(int timestep){
+
+
+ std::string filename = "snapshot_" + std::to_string(timestep) + ".bin";
+/* 
+    // Ouvrir en mode binaire
+    std::ofstream out(filename, std::ios::binary);
+    if (!out) {
+        std::cerr << "Error when opening the file" << filename << "\n";
+        return;
+    }
+
+    for (int n = 0; n<m_mesh->getNumberOfNodes(); n++){
+      float value = pnGlobal(n, 1);
+      char* s = float_to_cstring(value);
+      out.write(s, sizeof(char));
+    }
+
+
+    out.close();
+    std::cout << "Snapshot saved: " << filename << "\n"; */
+
+
+    // Ouvrir en mode texte
+std::ofstream out(filename);
+if (!out) {
+    std::cerr << "Error when opening the file " << filename << "\n";
+    return;
+}
+
+// Parcours des noeuds
+for (int n = 0; n < m_mesh->getNumberOfNodes(); n++) {
+    float value = pnGlobal(n, 1);
+    out << value << "\n";  // écrit le float en texte suivi d'un retour à la ligne
+}
+
+out.close();
+std::cout << "Snapshot saved: " << filename << "\n";
+
+}
+
+
+/*
+for (int n = 0; n<m_mesh->getNumberOfNodes(); n++) {
+      float tmpSum = 0.;
+      for (int dim = 0; dim<3; dim++) {
+        int nodeC = m_mesh->nodeCoord(n,dim);
+        int receiverC = sismoPoints[rcvIndex][dim];
+        tmpSum += (receiverC - nodeC) * (receiverC - nodeC);
+      }
+      float dist = sqrt(tmpSum);
+      // update min variables
+      if (dist < minDist) {minDist = dist; indexNodeMinDist = n;}
+    }*/
