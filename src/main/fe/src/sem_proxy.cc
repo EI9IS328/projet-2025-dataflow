@@ -21,6 +21,7 @@
 using namespace SourceAndReceiverUtils;
 
 void parseSismoPoints(std::string path, std::vector<std::array<float, 3>> * resultVector) {
+  std::cout << "Parsing sismo receiver points in provided file : " << path << std::endl;
   std::ifstream file(path);
   if (!file.is_open()) {
     std::cerr << "Impossible to open the --sismo-points provided path ! " << std::endl;
@@ -159,6 +160,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   }
 
   // find closest node to each of our receivers
+  std::cout << "Looking for closest node to each of the provided sismo points receivers" << std::endl;
   for (int rcvIndex = 0; rcvIndex<sismoPoints.size(); rcvIndex++) {
     float minDist = INFINITY;
     float indexNodeMinDist = 0;
@@ -284,6 +286,7 @@ void SEMproxy::run()
     }
     file << std::endl;
     file.close();
+    std::cout << "Wrote sismos in " << fileNameStr << std::endl;
   }
 }
 
