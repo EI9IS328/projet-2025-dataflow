@@ -180,7 +180,6 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
   initFiniteElem();
 
-  std::cout << " Size of pnGlobal " << pnGlobal.size() << ", extent 0 = " << pnGlobal.extent(0) << " , size of dim 1= " << pnGlobal.extent(1) << " size of dim 2 " << pnGlobal.extent(2) << " size of dim 3 " << pnGlobal.extent(3) <<  std::endl;
 
   std::cout << "Number of node is " << m_mesh->getNumberOfNodes() << std::endl;
   std::cout << "Number of element is " << m_mesh->getNumberOfElements()
