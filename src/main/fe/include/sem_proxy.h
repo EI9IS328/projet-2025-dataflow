@@ -119,6 +119,8 @@ class SEMproxy
   arrayReal rhsWeightsRcv;
   arrayReal pnAtReceiver;
 
+  std::vector<std::array<int, 3>> sismoPoints;
+
   // initialize source and RHS
   void init_source();
 

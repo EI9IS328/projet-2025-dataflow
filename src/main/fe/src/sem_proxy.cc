@@ -20,8 +20,36 @@
 
 using namespace SourceAndReceiverUtils;
 
+void parseSismoPoints(std::string path, std::vector<std::array<int, 3>> * resultVector) {
+  std::ifstream file(path);
+  if (!file.is_open()) {
+    std::cerr << "Impossible to open the --sismo-points provided path ! " << std::endl;
+    return;
+  }
+
+  std::string line;
+  while (std::getline(file, line)) {
+    std::istringstream lineStringStream(line);
+    std::array<int, 3> currentCoordinates;
+    std::string token;
+    int index = 0;
+    while (std::getline(lineStringStream, token, ' ')) {
+      currentCoordinates[index] = std::stoi(token);
+      index += 1;
+    }
+    if (index == 3) { // ensuring we parsed 3 values in this iteration of the loop
+      resultVector->push_back(currentCoordinates);
+    }
+  }
+  
+}
+
 SEMproxy::SEMproxy(const SemProxyOptions& opt)
 {
+  if (opt.sismoPoints.size() > 0) {
+    // storing points in this->sismoPoints;
+    parseSismoPoints(opt.sismoPoints, &sismoPoints);   
+  }
   const int order = opt.order;
   snap_time_interval_ = opt.snap_time_interval;
   nb_elements_[0] = opt.ex;
@@ -143,6 +171,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
 void SEMproxy::run()
 {
+  std::cout<<"running sem proxy"<<std::endl;
   time_point<system_clock> startComputeTime, startOutputTime, totalComputeTime,
       totalOutputTime;
 

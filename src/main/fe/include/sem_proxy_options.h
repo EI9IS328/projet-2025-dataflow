@@ -19,6 +19,7 @@ class SemProxyOptions
   float dt = 0.001;
   float timemax = 1.5;
   bool autodt = false;
+  std::string sismoPoints = "";
   int snap_time_interval = 150;
   // sponge boundaries parameters
   float boundaries_size = 0;
@@ -71,8 +72,9 @@ class SemProxyOptions
         "is-model-on-nodes",
         "Boolean to tell if the model is charged on nodes (true) or on element "
         "(false)",
-        cxxopts::value<bool>(o.isModelOnNodes))(
-        "is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))(
-        "sd,snapshot-delay", "Delay between each snapshot (step (ms) )", cxxopts::value<int>(o.snap_time_interval));
+        cxxopts::value<bool>(o.isModelOnNodes))
+        ("sismo-points", "Path to sismo receptor points to save", cxxopts::value<std::string>(o.sismoPoints))
+        ("is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))
+        ("sd,snapshot-delay", "Delay between each snapshot (step (ms) )", cxxopts::value<int>(o.snap_time_interval));
   }
 };
