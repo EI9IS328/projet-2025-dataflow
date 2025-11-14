@@ -40,11 +40,16 @@ The current SEM proxy supports the following data container:
 
 ### Step 1: Compile and Install
 
+Pour clone kokkos dans notre projet
+```
+git submodule update --init
+```
+
 ```sh
 mkdir build
 cd build
-cmake ..
-make install
+cmake -DUSE_KOKKOS=ON -DUSE_VECTOR=OFF ..
+make 
 ```
 
 By default, this builds the applications in sequential mode using `std::vector`.
