@@ -225,7 +225,7 @@ void SEMproxy::run()
 
     totalOutputTime += system_clock::now() - startOutputTime;
 
-    if (indexTimeSample % snap_time_interval_ == 0){
+    if (indexTimeSample % snap_time_interval_ == 0 && is_snapshots_ == true){
       saveSnapshot(indexTimeSample);
     }
 
