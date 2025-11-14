@@ -23,6 +23,7 @@ using namespace SourceAndReceiverUtils;
 SEMproxy::SEMproxy(const SemProxyOptions& opt)
 {
   const int order = opt.order;
+  snap_time_interval_ = opt.snap_time_interval;
   nb_elements_[0] = opt.ex;
   nb_elements_[1] = opt.ey;
   nb_elements_[2] = opt.ez;
@@ -191,6 +192,11 @@ void SEMproxy::run()
     solverData.m_i2 = tmp;
 
     totalOutputTime += system_clock::now() - startOutputTime;
+
+    if (indexTimeSample % snap_time_interval_ == 0){
+      saveSnapshot(indexTimeSample);
+    }
+
   }
 
   float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)
@@ -388,4 +394,8 @@ float SEMproxy::find_cfl_dt(float cfl_factor)
   float dt = cfl_factor * min_spacing / (sqrtDim3 * v_max);
 
   return dt;
+}
+
+void SEMproxy::saveSnapshot(int timestep){
+  
 }
