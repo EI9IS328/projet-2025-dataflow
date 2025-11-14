@@ -19,6 +19,7 @@ class SemProxyOptions
   float dt = 0.001;
   float timemax = 1.5;
   bool autodt = false;
+  int snap_time_interval = 150;
   // sponge boundaries parameters
   float boundaries_size = 0;
   bool surface_sponge = false;
@@ -71,6 +72,7 @@ class SemProxyOptions
         "Boolean to tell if the model is charged on nodes (true) or on element "
         "(false)",
         cxxopts::value<bool>(o.isModelOnNodes))(
-        "is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic));
+        "is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))(
+        "sd,snapshot-delay", "Delay between each snapshot (step (ms) )", cxxopts::value<int>(o.snap_time_interval));
   }
 };
