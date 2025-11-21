@@ -299,9 +299,10 @@ void SEMproxy::run()
   for (int rcvIndex = 0; rcvIndex < sismoPoints.size(); rcvIndex++) {
     // create file and write in it
     std::ostringstream filename;
-    filename << sismoPoints[rcvIndex][0] << "-" <<  sismoPoints[rcvIndex][1] << "-" << sismoPoints[rcvIndex][2] << "-sismo.txt";
+    filename << "../data/sismos/" << sismoPoints[rcvIndex][0] << "-" <<  sismoPoints[rcvIndex][1] << "-" << sismoPoints[rcvIndex][2] << "-sismo.txt";
     std::string fileNameStr = filename.str();
     std::ofstream file(fileNameStr);  
+    
     for (int sample = 0; sample<num_sample_; sample++) {
       if (sample > 0) {file << " ";}
       file << pnAtSismoPoints(rcvIndex, sample);
