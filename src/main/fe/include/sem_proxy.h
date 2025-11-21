@@ -100,6 +100,7 @@ class SEMproxy
   float dt_;
   float timemax_;
   int num_sample_;
+  int order;
   // source parameters
   const int myNumberOfRHS = 1;
   const float f0 = 5.;
