@@ -260,7 +260,7 @@ __marimo__/
 ####################################################################################
 
 *.swp
-*snapshot*
+# *snapshot*
 *~
 compile_commands.json
 src/LvArra*
