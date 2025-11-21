@@ -446,7 +446,7 @@ char* float_to_cstring(float f) {
 void SEMproxy::saveSnapshot(int timestep){
 
 
- std::string filename = "snapshot_" + std::to_string(timestep) + ".bin";
+ std::string filename = "../snapshot/snapshot_" + std::to_string(timestep) + ".bin";
 /* 
     // Ouvrir en mode binaire
     std::ofstream out(filename, std::ios::binary);
