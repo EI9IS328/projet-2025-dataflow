@@ -476,9 +476,9 @@ if (!out) {
 // Parcours des noeuds
 for (int n = 0; n < m_mesh->getNumberOfNodes(); n++) {
     float value = pnGlobal(n, 1);
-      out << value;
-      out << " ";
-    if (n != 0 && n % nb_elements_[0] == 0){
+    out << value;
+    out << " ";
+    if ((n+1) % nb_elements_[0] == 0){
       out << "\n";
     }
 }
