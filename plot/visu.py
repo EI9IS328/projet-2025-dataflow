@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-filename = "./snapshot_100.bin"  
+filename = "../data/snapshot/snapshot_100.bin"  
 start_line = 1250
 Y_lines = 50
 
