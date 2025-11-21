@@ -17,6 +17,7 @@
 #include <iostream>
 #include <sstream>
 #include <variant>
+#include <ctime>
 
 using namespace SourceAndReceiverUtils;
 
@@ -47,7 +48,7 @@ void parseSismoPoints(std::string path, std::vector<std::array<float, 3>> * resu
 
 SEMproxy::SEMproxy(const SemProxyOptions& opt)
 {
-  const int order = opt.order;
+  order = opt.order;
   snap_time_interval_ = opt.snap_time_interval;
   nb_elements_[0] = opt.ex;
   nb_elements_[1] = opt.ey;
@@ -198,10 +199,41 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
 }
 
+void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismotime_ms, 
+                        float * domain_size_, int * nb_elements_, int order) {
+  // determine file name, create file
+  std::ostringstream filename;
+  std::time_t timestamp = std::time(nullptr);
+  filename << timestamp << "-execution.csv";
+
+  std::string fileNameStr = filename.str();
+  std::ofstream file(fileNameStr);  
+  // cols
+  file << "timestamp,kerneltime,outputtime,writesismotime,ex,ey,ez,lx,ly,lz,order";
+  file << std::endl;
+
+  float lx = domain_size_[0];
+  float ly = domain_size_[1];
+  float lz = domain_size_[2];
+  int ex = nb_elements_[0];
+  int ey = nb_elements_[1];
+  int ez = nb_elements_[2];
+
+  file << timestamp;
+  file <<","<<kerneltime_ms;
+  file<<","<<outputtime_ms;
+  file<<","<<writesismotime_ms;
+  file<<","<<ex<<","<<ey<<","<<ez;
+  file<<","<<lx<<","<<ly<<","<<lz;
+  file<<","<<order;
+  file << std::endl;
+  file.close();
+}
+
 void SEMproxy::run()
 {
   time_point<system_clock> startComputeTime, startOutputTime, totalComputeTime,
-      totalOutputTime;
+      totalOutputTime, startWriteSismoTime, totalWriteSismoTime;
 
   SEMsolverDataAcoustic solverData(i1, i2, myRHSTerm, pnGlobal, rhsElement,
                                    rhsWeights);
@@ -260,20 +292,8 @@ void SEMproxy::run()
 
   }
 
-  float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)
-                            .time_since_epoch()
-                            .count();
-  float outputtime_ms =
-      time_point_cast<microseconds>(totalOutputTime).time_since_epoch().count();
-
-  cout << "------------------------------------------------ " << endl;
-  cout << "\n---- Elapsed Kernel Time : " << kerneltime_ms / 1E6 << " seconds."
-       << endl;
-  cout << "---- Elapsed Output Time : " << outputtime_ms / 1E6 << " seconds."
-       << endl;
-  cout << "------------------------------------------------ " << endl;
-
   // Save sismos for all receivers
+  startWriteSismoTime = system_clock::now();
   for (int rcvIndex = 0; rcvIndex < sismoPoints.size(); rcvIndex++) {
     // create file and write in it
     std::ostringstream filename;
@@ -288,6 +308,26 @@ void SEMproxy::run()
     file.close();
     std::cout << "Wrote sismos in " << fileNameStr << std::endl;
   }
+  totalWriteSismoTime += system_clock::now() - startWriteSismoTime;
+
+  float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)
+                            .time_since_epoch()
+                            .count();
+  float outputtime_ms =
+      time_point_cast<microseconds>(totalOutputTime).time_since_epoch().count();
+
+  float writesismotime_ms = time_point_cast<microseconds>(totalWriteSismoTime).time_since_epoch().count();
+
+  cout << "------------------------------------------------ " << endl;
+  cout << "\n---- Elapsed Kernel Time : " << kerneltime_ms / 1E6 << " seconds."
+       << endl;
+  cout << "---- Elapsed Output Time : " << outputtime_ms / 1E6 << " seconds."
+       << endl;
+  cout << "---- Elapsed write sismo time : " << writesismotime_ms / 1E6 << " seconds." << endl;
+  cout << "------------------------------------------------ " << endl;
+
+  saveMetricsToFile(kerneltime_ms, outputtime_ms, writesismotime_ms,domain_size_,nb_elements_, order);
+
 }
 
 // Initialize arrays
