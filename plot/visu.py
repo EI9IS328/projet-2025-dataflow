@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-filename = "../data/snapshot/snapshot_100.bin"  
-start_line = 1250
-Y_lines = 50
+filename = "../data/snapshot/snapshot_600.bin" 
+start_line = 1275
+Y_lines = 51
 
 data = []
 with open(filename, 'r') as f:
