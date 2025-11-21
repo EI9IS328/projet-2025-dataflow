@@ -100,6 +100,7 @@ class SEMproxy
   float dt_;
   float timemax_;
   int num_sample_;
+  int order;
   // source parameters
   const int myNumberOfRHS = 1;
   const float f0 = 5.;
@@ -119,7 +120,9 @@ class SEMproxy
   arrayReal rhsWeightsRcv;
   arrayReal pnAtReceiver;
 
-  std::vector<std::array<int, 3>> sismoPoints;
+  std::vector<std::array<float, 3>> sismoPoints;
+  std::vector<int> sismoPointsToNode; // for each sismoPoints, the corresponding node index
+  arrayReal pnAtSismoPoints; // 
 
   // initialize source and RHS
   void init_source();
