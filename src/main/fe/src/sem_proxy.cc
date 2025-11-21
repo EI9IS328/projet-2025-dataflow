@@ -20,7 +20,8 @@
 
 using namespace SourceAndReceiverUtils;
 
-void parseSismoPoints(std::string path, std::vector<std::array<int, 3>> * resultVector) {
+void parseSismoPoints(std::string path, std::vector<std::array<float, 3>> * resultVector) {
+  std::cout << "Parsing sismo receiver points in provided file : " << path << std::endl;
   std::ifstream file(path);
   if (!file.is_open()) {
     std::cerr << "Impossible to open the --sismo-points provided path ! " << std::endl;
@@ -30,11 +31,11 @@ void parseSismoPoints(std::string path, std::vector<std::array<int, 3>> * result
   std::string line;
   while (std::getline(file, line)) {
     std::istringstream lineStringStream(line);
-    std::array<int, 3> currentCoordinates;
+    std::array<float, 3> currentCoordinates;
     std::string token;
     int index = 0;
     while (std::getline(lineStringStream, token, ' ')) {
-      currentCoordinates[index] = std::stoi(token);
+      currentCoordinates[index] = std::stof(token);
       index += 1;
     }
     if (index == 3) { // ensuring we parsed 3 values in this iteration of the loop
@@ -46,10 +47,6 @@ void parseSismoPoints(std::string path, std::vector<std::array<int, 3>> * result
 
 SEMproxy::SEMproxy(const SemProxyOptions& opt)
 {
-  if (opt.sismoPoints.size() > 0) {
-    // storing points in this->sismoPoints;
-    parseSismoPoints(opt.sismoPoints, &sismoPoints);   
-  }
   const int order = opt.order;
   snap_time_interval_ = opt.snap_time_interval;
   nb_elements_[0] = opt.ex;
@@ -155,7 +152,36 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   m_solver->computeFEInit(*m_mesh, sponge_size, opt.surface_sponge,
                           opt.taper_delta);
 
+
+  // Sismo points
+  if (opt.sismoPoints.size() > 0) {
+    // storing points in this->sismoPoints;
+    parseSismoPoints(opt.sismoPoints, &sismoPoints);   
+  }
+
+  // find closest node to each of our receivers
+  std::cout << "Looking for closest node to each of the provided sismo points receivers" << std::endl;
+  for (int rcvIndex = 0; rcvIndex<sismoPoints.size(); rcvIndex++) {
+    float minDist = INFINITY;
+    float indexNodeMinDist = 0;
+    for (int n = 0; n<m_mesh->getNumberOfNodes(); n++) {
+      float tmpSum = 0.;
+      for (int dim = 0; dim<3; dim++) {
+        float nodeC = m_mesh->nodeCoord(n,dim);
+        float receiverC = sismoPoints[rcvIndex][dim];
+        tmpSum += (receiverC - nodeC) * (receiverC - nodeC);
+      }
+      float dist = sqrt(tmpSum);
+      // update min variables
+      if (dist < minDist) {minDist = dist; indexNodeMinDist = n;}
+    }
+    sismoPointsToNode.push_back(indexNodeMinDist); // save this node as the closest to the rcvIndex'th receiver
+  }
+  pnAtSismoPoints = allocateArray2D<arrayReal>(sismoPoints.size(), num_sample_, "pnAtSismoPoints");
+
+
   initFiniteElem();
+
 
   std::cout << "Number of node is " << m_mesh->getNumberOfNodes() << std::endl;
   std::cout << "Number of element is " << m_mesh->getNumberOfElements()
@@ -174,7 +200,6 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
 void SEMproxy::run()
 {
-  std::cout<<"running sem proxy"<<std::endl;
   time_point<system_clock> startComputeTime, startOutputTime, totalComputeTime,
       totalOutputTime;
 
@@ -217,6 +242,10 @@ void SEMproxy::run()
 
     pnAtReceiver(0, indexTimeSample) = varnp1;
 
+    for (int rcvIndex = 0; rcvIndex < sismoPoints.size(); rcvIndex++) {
+        pnAtSismoPoints(rcvIndex, indexTimeSample) = pnGlobal(sismoPointsToNode[rcvIndex], i2);    
+    }
+
     swap(i1, i2);
 
     auto tmp = solverData.m_i1;
@@ -243,6 +272,22 @@ void SEMproxy::run()
   cout << "---- Elapsed Output Time : " << outputtime_ms / 1E6 << " seconds."
        << endl;
   cout << "------------------------------------------------ " << endl;
+
+  // Save sismos for all receivers
+  for (int rcvIndex = 0; rcvIndex < sismoPoints.size(); rcvIndex++) {
+    // create file and write in it
+    std::ostringstream filename;
+    filename << sismoPoints[rcvIndex][0] << "-" <<  sismoPoints[rcvIndex][1] << "-" << sismoPoints[rcvIndex][2] << "-sismo.txt";
+    std::string fileNameStr = filename.str();
+    std::ofstream file(fileNameStr);  
+    for (int sample = 0; sample<num_sample_; sample++) {
+      if (sample > 0) {file << " ";}
+      file << pnAtSismoPoints(rcvIndex, sample);
+    }
+    file << std::endl;
+    file.close();
+    std::cout << "Wrote sismos in " << fileNameStr << std::endl;
+  }
 }
 
 // Initialize arrays
