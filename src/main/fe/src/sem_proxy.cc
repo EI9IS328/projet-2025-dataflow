@@ -7,6 +7,8 @@
 
 #include "sem_proxy.h"
 
+#include "filesystem"
+
 #include <cartesian_struct_builder.h>
 #include <cartesian_unstruct_builder.h>
 #include <sem_solver_acoustic.h>
@@ -50,7 +52,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
     // storing points in this->sismoPoints;
     parseSismoPoints(opt.sismoPoints, &sismoPoints);   
   }
-  const int order = opt.order;
+  int order = opt.order;
   snap_time_interval_ = opt.snap_time_interval;
   nb_elements_[0] = opt.ex;
   nb_elements_[1] = opt.ey;
@@ -445,28 +447,12 @@ char* float_to_cstring(float f) {
 
 void SEMproxy::saveSnapshot(int timestep){
 
+std::string filename =
+    "../data/snapshot/snapshot_" +
+    std::to_string(timestep) +
+    "_order" + std::to_string(sourceOrder) +
+    ".bin";
 
- std::string filename = "../data/snapshot/snapshot_" + std::to_string(timestep) + ".bin";
-/* 
-    // Ouvrir en mode binaire
-    std::ofstream out(filename, std::ios::binary);
-    if (!out) {
-        std::cerr << "Error when opening the file" << filename << "\n";
-        return;
-    }
-
-    for (int n = 0; n<m_mesh->getNumberOfNodes(); n++){
-      float value = pnGlobal(n, 1);
-      char* s = float_to_cstring(value);
-      out.write(s, sizeof(char));
-    }
-
-
-    out.close();
-    std::cout << "Snapshot saved: " << filename << "\n"; */
-
-
-    // Ouvrir en mode texte
 std::ofstream out(filename);
 if (!out) {
     std::cerr << "Error when opening the file " << filename << "\n";
