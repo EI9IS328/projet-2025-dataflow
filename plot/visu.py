@@ -1,10 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import re
 
-filename = "../data/snapshot/snapshot_600.bin" 
+
+filename = "../data/snapshot/snapshot_600_order1.bin" 
+
+match = re.search(r"order(\d+)", filename)
+order = int(match.group(1)) if match else None
+
 start_line = 1275
 Y_lines = 51
+
 
 data = []
 with open(filename, 'r') as f:

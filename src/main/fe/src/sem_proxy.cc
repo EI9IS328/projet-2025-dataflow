@@ -535,7 +535,7 @@ void SEMproxy::saveSnapshot(int timestep){
 std::string filename =
     "../data/snapshot/snapshot_" +
     std::to_string(timestep) +
-    "_order" + std::to_string(sourceOrder) +
+    "_order" + std::to_string(order) +
     ".bin";
 
 std::ofstream out(filename);
