@@ -29,6 +29,8 @@ class SemProxyOptions
   bool isModelOnNodes = false;
   bool isElastic = false;
   bool isSnapshotOn = false;
+  bool isComputeHistogramOn = false;
+  int computeHistogramInterval = 150;
 
   void validate() const
   {
@@ -77,6 +79,9 @@ class SemProxyOptions
         ("s,snapshot","Enable or disable saving snapshots",cxxopts::value<bool>(o.isSnapshotOn))
         ("sismo-points", "Path to sismo receptor points to save", cxxopts::value<std::string>(o.sismoPoints))
         ("is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))
-        ("sd,snapshot-delay", "Delay between each snapshot (step (ms) )", cxxopts::value<int>(o.snap_time_interval));
+        ("sd,snapshot-delay", "Delay between each snapshot (step (ms) )", cxxopts::value<int>(o.snap_time_interval))
+        ("compute-histogram","Enable or disable computing histogram for pressure value distribution",cxxopts::value<bool>(o.isComputeHistogramOn))
+        ("compute-histogram-delay", "Delay between each histogram computation (step (ms) )", cxxopts::value<int>(o.computeHistogramInterval))
+;
   }
 };
