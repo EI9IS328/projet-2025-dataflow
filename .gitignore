@@ -274,3 +274,6 @@ receiver.dat
 
 *.err
 benchmark_comparison.png
+
+
+data/
