@@ -3,25 +3,40 @@ import matplotlib.pyplot as plt
 import sys
 import time
 import numpy as np
+import os
 
 if len(sys.argv) < 2:
     print("Usage: python histo.py <path_to_snapshot>")
+    print("Could be path to a single snapshot or to a folder containing all snapshots for an execution")
     sys.exit(1)
 
 filename = sys.argv[1]
 
-with open(filename, 'r') as f:
-    content = f.read()  # lit tout le fichier dans une string
+# On peut passer un folder en paramètre, et cela calculera une moyenne de toutes les snapshots
+# contenues dans ce folder
+if os.path.isdir(filename):
+    files = []
+    for fName in os.listdir(filename):
+        if fName.endswith('.bin'):
+            files.append(os.path.join(filename, fName))
+else:
+    files = [filename]
 
-content.strip()
-lines = content.split('\n')
-
-# On convertit la snapshot en un grand tableau 1d avec toutes les valeurs
+print("On calcule l'histogramme pour ces fichiers:")
+print(files)
+# On convertit la/les snapshot en un grand tableau 1d avec toutes les valeurs
 data = []
-for l in lines:
-    vals = l.strip().split(' ')
-    vals = list(map(float, vals))
-    data.extend(vals)
+
+for file_snapshot in files:
+    with open(file_snapshot, 'r') as f:
+        content = f.read()
+    content.strip()
+    lines = content.split('\n')
+    for l in lines:
+        vals = l.strip().split(' ')
+        vals = list(map(float, vals))
+        data.extend(vals)
+
 
 
 
@@ -44,4 +59,5 @@ plt.bar(
 
 plt.ylabel("Nombre de valeurs of values")
 plt.title(f"Distribution de la fréquence dans la snapshot {filename}")
-plt.show()
+plt.savefig('histogram-result.png')
+# plt.show()
