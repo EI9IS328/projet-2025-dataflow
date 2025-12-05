@@ -276,4 +276,4 @@ receiver.dat
 benchmark_comparison.png
 
 
-data/snapshot/*.bin
+data/
