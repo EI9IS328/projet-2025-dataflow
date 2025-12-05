@@ -20,6 +20,8 @@
 #include <sstream>
 #include <variant>
 #include <ctime>
+#include <limits>
+
 
 using namespace SourceAndReceiverUtils;
 
@@ -82,6 +84,9 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
 
   is_snapshots_ =  opt.isSnapshotOn;
+
+  is_compute_histogram_ = opt.isComputeHistogramOn;
+  compute_histogram_interval = opt.computeHistogramInterval;
 
   const SolverFactory::methodType methodType = getMethod(opt.method);
   const SolverFactory::implemType implemType = getImplem(opt.implem);
@@ -290,6 +295,9 @@ void SEMproxy::run()
 
     if (indexTimeSample % snap_time_interval_ == 0 && is_snapshots_ == true){
       saveSnapshot(indexTimeSample);
+    }
+    if (indexTimeSample % compute_histogram_interval == 0 && is_compute_histogram_ == true) {
+      computeHistogram(indexTimeSample);
     }
 
   }
@@ -529,6 +537,61 @@ char* float_to_cstring(float f) {
     char* result = new char[tmp.size() + 1];
     std::strcpy(result, tmp.c_str());
     return result;
+}
+
+void SEMproxy::computeHistogram(int timestep) {
+  // min et max
+  float min = std::numeric_limits<float>::infinity();
+  float max = -std::numeric_limits<float>::infinity();
+  for (int n = 0; n<m_mesh->getNumberOfNodes(); n++) {
+      float value = pnGlobal(n, 1);
+      min = fmin(value, min);
+      max = fmax(value, max);
+  }
+
+  int nb_bins = 10;
+  // calculer les bin edges
+  std::vector<float> bin_edges;
+  bin_edges.push_back(min);
+  float bin_width = (max-min)/nb_bins;
+  for (int i = 1; i<=nb_bins; i++) {
+    bin_edges.push_back(min + i*bin_width);
+  }
+
+  // calculer l'histogramme
+  std::vector<int> hist(nb_bins, 0);
+  if (min == max) {
+    hist[0] = m_mesh->getNumberOfNodes();    
+  }
+  else{
+    for (int n = 0; n<m_mesh->getNumberOfNodes(); n++) {
+        float value = pnGlobal(n, 1);
+        int idx = ((value - min) / bin_width);
+        if (idx == nb_bins) {
+          hist[nb_bins-1]++;
+        } 
+        else {hist[idx]++;}
+    }
+  }
+
+  // save 
+  std::string filename = "../data/histo/histo_" + std::to_string(timestep)
+                         + "_order" + std::to_string(order) + ".bin";
+  std::ofstream out(filename);
+  if (!out) {
+      std::cerr << "Error when opening the file " << filename << "\n";
+      return;
+  }
+  out << "bin_edges:\n";
+  for (int i = 0; i<nb_bins+1; i++) {
+    out <<bin_edges[i] << ' ';
+  }
+  out << '\n';
+  out << "hist:\n";
+  for (int i = 0; i<nb_bins; i++) {
+    out << hist[i]<< ' ';
+  }
+  out << '\n';
 }
 
 void SEMproxy::saveSnapshot(int timestep){
