@@ -85,6 +85,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
   is_snapshots_ =  opt.isSnapshotOn;
   is_stats_analysis_ = opt.isStatsAnalysisOn;
+  stats_analysis_interval = opt.statsAnalysisInterval;
 
   is_compute_histogram_ = opt.isComputeHistogramOn;
   compute_histogram_interval = opt.computeHistogramInterval;
@@ -294,14 +295,14 @@ void SEMproxy::run()
 
     totalOutputTime += system_clock::now() - startOutputTime;
 
-    if (indexTimeSample % snap_time_interval_ == 0){
-      if ( is_snapshots_ == true )
+    if (indexTimeSample % snap_time_interval_ == 0 && is_snapshots_ == true ){
         saveSnapshot(indexTimeSample);
+    }
 
-      if ( is_stats_analysis_ == true )
+    if ( indexTimeSample % stats_analysis_interval == 0 && is_stats_analysis_ == true )
         statsAnalysis(indexTimeSample);
 
-    }
+
     if (indexTimeSample % compute_histogram_interval == 0 && is_compute_histogram_ == true) {
       computeHistogram(indexTimeSample);
     }
@@ -653,7 +654,7 @@ void SEMproxy::statsAnalysis(int timestep){
 
   double variance = (sumSquared / count) - (mean * mean);
 
-  std::cout << "--- Statistiques ---\n";
+  std::cout << "--- Statistiques "<< "timeStep = " << timestep <<"---\n";
   std::cout << "Moyenne : " << mean << std::endl;
   std::cout << "Variance : " << variance << std::endl;
   std::cout << "Min : " << minVal << std::endl;

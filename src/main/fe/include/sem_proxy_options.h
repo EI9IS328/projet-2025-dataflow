@@ -30,6 +30,7 @@ class SemProxyOptions
   bool isElastic = false;
   bool isSnapshotOn = false;
   bool isStatsAnalysisOn = false;
+  int statsAnalysisInterval= 50;
   bool isComputeHistogramOn = false;
   int computeHistogramInterval = 150;
 
@@ -81,6 +82,7 @@ class SemProxyOptions
         ("sismo-points", "Path to sismo receptor points to save", cxxopts::value<std::string>(o.sismoPoints))
         ("is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))
         ("stats-analysis", "stats analysis in-situ", cxxopts::value<bool>(o.isStatsAnalysisOn))
+        ("stats-interval", "Delay between each stats analysis (step (ms) )", cxxopts::value<int>(o.statsAnalysisInterval))
         ("compute-histogram","Enable or disable computing histogram for pressure value distribution",cxxopts::value<bool>(o.isComputeHistogramOn))
         ("compute-histogram-delay", "Delay between each histogram computation (step (ms) )", cxxopts::value<int>(o.computeHistogramInterval))
         ("sd,snapshot-delay", "Delay between each snapshot (step (ms) )", cxxopts::value<int>(o.snap_time_interval));
