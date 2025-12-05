@@ -19,7 +19,7 @@ def run_insitu():
     # histoTime
     # A noter: on compte les temps d'écriture des histo mais c'est peut etre pas bien à chronometrer pcq l'OS le fait pas en direct
     result = subprocess.run(
-        ["./build/bin/semproxy", "-o", "2", "--compute-histogram", "--compute-histogram-delay", "50", "--ex", str(size), "--ey",  str(size), "--ez",  str(size)],
+        ["./build/bin/semproxy",  "--timemax", "0.4", "-o", "2", "--compute-histogram", "--compute-histogram-delay", "50", "--ex", str(size), "--ey",  str(size), "--ez",  str(size)],
         capture_output=True,
         text=True          
     )
@@ -31,22 +31,26 @@ def run_adhoc():
     # Exécution adhoc avec les snapshots + python3 histo.py pour chaque snapshot
     # saveSnapshotTime + time histo python
     result = subprocess.run(
-        ["./build/bin/semproxy", "-o", "2", "--snapshot", "--sd", "50", "--ex", str(size), "--ey",  str(size), "--ez",  str(size)],
+        ["./build/bin/semproxy", "--timemax", "0.4", "-o", "2", "--snapshot", "--sd", "50", "--ex", str(size), "--ey",  str(size), "--ez",  str(size)],
         capture_output=True,
         text=True          
     )
     statsExec = getExecStats(result.stdout)
     # launch histo python adhoc
     result = subprocess.run(
-        ["python3", "histo.py", "./data/snapshot/"],
+        ["python3", "scripts/stats/histo.py", "./data/snapshot/"],
         capture_output=True,
         text=True          
     )
-    print(result.stdout)
+
     adhoc_time = float(statsExec['snapshottime'])
+    found = False
     for line in result.stdout.splitlines():
         if line.startswith("Time:"):
             adhoc_time += float(line.split(':')[1].strip()) * 1e6
+            found = True 
+    if not(found):
+        print("Did not find any time in stdout for python3 histo.py")
     return adhoc_time
 
 total_insitu = 0
