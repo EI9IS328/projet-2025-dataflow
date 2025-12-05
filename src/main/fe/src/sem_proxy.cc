@@ -608,7 +608,7 @@ std::string filename =
     "../data/snapshot/snapshot_" +
     std::to_string(timestep) +
     "_order" + std::to_string(order) +
-    ".bin";
+    ".txt";
 
 std::ofstream out(filename);
 if (!out) {
@@ -654,7 +654,7 @@ void SEMproxy::statsAnalysis(int timestep){
 
   double variance = (sumSquared / count) - (mean * mean);
 
-  std::cout << "--- Statistiques "<< "timeStep = " << timestep <<"---\n";
+  std::cout << "--- Statistiques snapshots"<< "timeStep = " << timestep <<"---\n";
   std::cout << "Moyenne : " << mean << std::endl;
   std::cout << "Variance : " << variance << std::endl;
   std::cout << "Min : " << minVal << std::endl;

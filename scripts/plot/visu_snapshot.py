@@ -4,7 +4,7 @@ import seaborn as sns
 import re
 
 
-filename = "../data/snapshot/snapshot_600_order1.bin" 
+filename = "../data/snapshot/snapshot_150_order2.txt" 
 
 match = re.search(r"order(\d+)", filename)
 order = int(match.group(1)) if match else None
