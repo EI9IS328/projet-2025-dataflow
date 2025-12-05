@@ -26,6 +26,7 @@ print("On calcule l'histogramme pour ces fichiers:")
 print(files)
 # On convertit la/les snapshot en un grand tableau 1d avec toutes les valeurs
 data = []
+t0 = time.time()
 
 for file_snapshot in files:
     with open(file_snapshot, 'r') as f:
@@ -41,9 +42,7 @@ for file_snapshot in files:
 
 
 # on calcule l'histogramme avec numpy pour pouvoir le chronométrer, et faire l'affichage dans un temps second
-t0 = time.time()
 hist, bin_edges = np.histogram(data, bins=10) 
-t1 = time.time()
 # hist[i] est le nombre de valeurs dans le bin numéro i
 
 # on sauvegarde l'histogramme ici aussi, puisqu'on le sauvegarde en insitu
@@ -57,7 +56,8 @@ with open(outputPath, 'w') as f:
         f.write(f"{hval} ")
     f.write("\n")
 
-print("Temps calcul histogramme =", t1 - t0, "sec")
+t1 = time.time()
+print("Time: ", t1 - t0)
 
 plt.bar(
     bin_edges[:-1],

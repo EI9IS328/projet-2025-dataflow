@@ -206,7 +206,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
 }
 
-void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismotime_ms, 
+void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismotime_ms, float histotime_ms, float snapshottime_ms,
                         float * domain_size_, int * nb_elements_, int order) {
   // determine file name, create file
   std::ostringstream filename;
@@ -216,7 +216,7 @@ void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismot
   std::string fileNameStr = filename.str();
   std::ofstream file(fileNameStr);  
   // cols
-  file << "timestamp,kerneltime,outputtime,writesismotime,ex,ey,ez,lx,ly,lz,order";
+  file << "timestamp,kerneltime,outputtime,writesismotime,histotime,snapshottime,ex,ey,ez,lx,ly,lz,order";
   file << std::endl;
 
   float lx = domain_size_[0];
@@ -230,17 +230,22 @@ void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismot
   file <<","<<kerneltime_ms;
   file<<","<<outputtime_ms;
   file<<","<<writesismotime_ms;
+  file<<","<<histotime_ms;
+  file<<","<<snapshottime_ms;
   file<<","<<ex<<","<<ey<<","<<ez;
   file<<","<<lx<<","<<ly<<","<<lz;
   file<<","<<order;
   file << std::endl;
   file.close();
+
+  std::cout << "Exec stats: " << fileNameStr << std::endl;
 }
 
 void SEMproxy::run()
 {
   time_point<system_clock> startComputeTime, startOutputTime, totalComputeTime,
-      totalOutputTime, startWriteSismoTime, totalWriteSismoTime;
+      totalOutputTime, startWriteSismoTime, totalWriteSismoTime, 
+      startHistoTime, totalHistoTime, startSnapshotTime, totalSnapshotTime;
 
   SEMsolverDataAcoustic solverData(i1, i2, myRHSTerm, pnGlobal, rhsElement,
                                    rhsWeights);
@@ -294,10 +299,14 @@ void SEMproxy::run()
     totalOutputTime += system_clock::now() - startOutputTime;
 
     if (indexTimeSample % snap_time_interval_ == 0 && is_snapshots_ == true){
+      startSnapshotTime = system_clock::now();
       saveSnapshot(indexTimeSample);
+      totalSnapshotTime += system_clock::now() - startSnapshotTime;
     }
     if (indexTimeSample % compute_histogram_interval == 0 && is_compute_histogram_ == true) {
+      startHistoTime = system_clock::now();
       computeHistogram(indexTimeSample);
+      totalHistoTime += system_clock::now() - startHistoTime;
     }
 
   }
@@ -329,6 +338,9 @@ void SEMproxy::run()
 
   float writesismotime_ms = time_point_cast<microseconds>(totalWriteSismoTime).time_since_epoch().count();
 
+  float histotime_ms = time_point_cast<microseconds>(totalHistoTime).time_since_epoch().count();
+  float snapshottime_ms = time_point_cast<microseconds>(totalSnapshotTime).time_since_epoch().count();
+
   cout << "------------------------------------------------ " << endl;
   cout << "\n---- Elapsed Kernel Time : " << kerneltime_ms / 1E6 << " seconds."
        << endl;
@@ -337,7 +349,7 @@ void SEMproxy::run()
   cout << "---- Elapsed write sismo time : " << writesismotime_ms / 1E6 << " seconds." << endl;
   cout << "------------------------------------------------ " << endl;
 
-  saveMetricsToFile(kerneltime_ms, outputtime_ms, writesismotime_ms,domain_size_,nb_elements_, order);
+  saveMetricsToFile(kerneltime_ms, outputtime_ms, writesismotime_ms, histotime_ms, snapshottime_ms, domain_size_,nb_elements_, order);
 
 }
 
