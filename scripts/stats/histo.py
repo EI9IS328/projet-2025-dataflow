@@ -42,9 +42,20 @@ for file_snapshot in files:
 
 # on calcule l'histogramme avec numpy pour pouvoir le chronométrer, et faire l'affichage dans un temps second
 t0 = time.time()
-hist, bin_edges = np.histogram(data, bins=15) 
+hist, bin_edges = np.histogram(data, bins=10) 
 t1 = time.time()
 # hist[i] est le nombre de valeurs dans le bin numéro i
+
+# on sauvegarde l'histogramme ici aussi, puisqu'on le sauvegarde en insitu
+outputPath = './histo-adhoc.bin'
+with open(outputPath, 'w') as f:
+    f.write("bin_edges:\n")
+    for be in bin_edges:
+        f.write(f"{be} ")
+    f.write("\nhist:\n")
+    for hval in hist:
+        f.write(f"{hval} ")
+    f.write("\n")
 
 print("Temps calcul histogramme =", t1 - t0, "sec")
 
