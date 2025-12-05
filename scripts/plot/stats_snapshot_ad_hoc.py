@@ -1,11 +1,16 @@
 import numpy as np
 import re
+import os
 
 
 filename = "../data/snapshot/snapshot_150_order2.txt" 
 
-match = re.search(r"order(\d+)", filename)
-order = int(match.group(1)) if match else None
+if not os.path.exists(filename):
+    print(f"Erreur : Le fichier '{filename}' n'existe pas.")
+    exit()
+else:
+    match = re.search(r"order(\d+)", filename)
+    order = int(match.group(1)) if match else None
 
 
 start_line = 1275
