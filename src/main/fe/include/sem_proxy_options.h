@@ -29,6 +29,7 @@ class SemProxyOptions
   bool isModelOnNodes = false;
   bool isElastic = false;
   bool isSnapshotOn = false;
+  bool isStatsAnalysisOn = false;
 
   void validate() const
   {
@@ -77,6 +78,7 @@ class SemProxyOptions
         ("s,snapshot","Enable or disable saving snapshots",cxxopts::value<bool>(o.isSnapshotOn))
         ("sismo-points", "Path to sismo receptor points to save", cxxopts::value<std::string>(o.sismoPoints))
         ("is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))
+        ("stats-analysis", "stats analysis in-situ", cxxopts::value<bool>(o.isStatsAnalysisOn))
         ("sd,snapshot-delay", "Delay between each snapshot (step (ms) )", cxxopts::value<int>(o.snap_time_interval));
   }
 };
