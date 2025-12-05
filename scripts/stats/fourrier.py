@@ -35,7 +35,10 @@ def main():
     plt.ylabel("Amplitude")
     plt.grid(True)
 
-    out_png = filename + "_fft.png"
+    base_name = os.path.splitext(os.path.basename(filename))[0]
+    default_filename = f"{base_name}_fft_normalized.png"
+
+    out_png = "data/fourrier/"+default_filename
     plt.savefig(out_png, dpi=200)
     print(f"[OK] FFT sauvegardée dans : {out_png}")
 
