@@ -75,6 +75,7 @@ class SEMproxy
   float find_cfl_dt(float cfl_factor);
 
   void saveSnapshot(int timestep);
+  void statsAnalysis(int timestep);
   void computeHistogram(int timestep);
 
  private:
@@ -94,6 +95,8 @@ class SEMproxy
   int snap_time_interval_;
   std::string snap_folder_;
 
+  //stat analysis
+  bool is_stats_analysis_;
   // histogram computation
   bool is_compute_histogram_;
   int compute_histogram_interval;

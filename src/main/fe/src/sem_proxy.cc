@@ -84,6 +84,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
 
   is_snapshots_ =  opt.isSnapshotOn;
+  is_stats_analysis_ = opt.isStatsAnalysisOn;
 
   is_compute_histogram_ = opt.isComputeHistogramOn;
   compute_histogram_interval = opt.computeHistogramInterval;
@@ -293,12 +294,18 @@ void SEMproxy::run()
 
     totalOutputTime += system_clock::now() - startOutputTime;
 
-    if (indexTimeSample % snap_time_interval_ == 0 && is_snapshots_ == true){
-      saveSnapshot(indexTimeSample);
+    if (indexTimeSample % snap_time_interval_ == 0){
+      if ( is_snapshots_ == true )
+        saveSnapshot(indexTimeSample);
+
+      if ( is_stats_analysis_ == true )
+        statsAnalysis(indexTimeSample);
+
     }
     if (indexTimeSample % compute_histogram_interval == 0 && is_compute_histogram_ == true) {
       computeHistogram(indexTimeSample);
     }
+
 
   }
 
@@ -624,15 +631,32 @@ std::cout << "Snapshot saved: " << filename << "\n";
 }
 
 
-/*
-for (int n = 0; n<m_mesh->getNumberOfNodes(); n++) {
-      float tmpSum = 0.;
-      for (int dim = 0; dim<3; dim++) {
-        int nodeC = m_mesh->nodeCoord(n,dim);
-        int receiverC = sismoPoints[rcvIndex][dim];
-        tmpSum += (receiverC - nodeC) * (receiverC - nodeC);
-      }
-      float dist = sqrt(tmpSum);
-      // update min variables
-      if (dist < minDist) {minDist = dist; indexNodeMinDist = n;}
-    }*/
+void SEMproxy::statsAnalysis(int timestep){
+  double sum = 0.0;
+  double sumSquared = 0.0;
+  double minVal = std::numeric_limits<double>::infinity();
+  double maxVal = -std::numeric_limits<double>::infinity();
+  int count = 0;
+
+  // Parcours des noeuds
+  for (int n = 0; n < m_mesh->getNumberOfNodes(); n++) {
+      double value = pnGlobal(n, 1);
+
+      sum += value;
+      sumSquared += value * value;
+      if (value < minVal) minVal = value;
+      if (value > maxVal) maxVal = value;
+      count++;
+  }
+
+  double mean = sum / count;
+
+  double variance = (sumSquared / count) - (mean * mean);
+
+  std::cout << "--- Statistiques ---\n";
+  std::cout << "Moyenne : " << mean << std::endl;
+  std::cout << "Variance : " << variance << std::endl;
+  std::cout << "Min : " << minVal << std::endl;
+  std::cout << "Max : " << maxVal << std::endl;
+
+}
