@@ -5,18 +5,18 @@ import os
 
 def plot_fourier_csv(csv_path):
     if not os.path.exists(csv_path):
-        print(f"❌ Erreur : Le fichier '{csv_path}' est introuvable.")
+        print(f"Erreur : Le fichier '{csv_path}' est introuvable.")
         return
 
     try:
         df = pd.read_csv(csv_path)
     except Exception as e:
-        print(f"❌ Erreur lors de la lecture du CSV : {e}")
+        print(f"Erreur lors de la lecture du CSV : {e}")
         return
 
     required_cols = ['freq_idx', 'magnitude', 'real', 'imag']
     if not all(col in df.columns for col in required_cols):
-        print(f"❌ Erreur : Le CSV doit contenir les colonnes {required_cols}")
+        print(f"Erreur : Le CSV doit contenir les colonnes {required_cols}")
         return
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
