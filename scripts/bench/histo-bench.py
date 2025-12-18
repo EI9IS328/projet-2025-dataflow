@@ -3,8 +3,8 @@ import csv
 from tabulate import tabulate
 
 
-nb_iter = 5
-sizes = [10,15,20]
+nb_iter = 4
+sizes = [10,50, 100, 200]
 
 
 
@@ -34,7 +34,7 @@ def run_insitu(size):
     # histoTime
     # A noter: on compte les temps d'écriture des histo mais c'est peut etre pas bien à chronometrer pcq l'OS le fait pas en direct
     result = subprocess.run(
-        ["./build/bin/semproxy",  "--timemax", "0.4", "-o", "2", "--compute-histogram", "--compute-histogram-delay", "50", "--ex", str(size), "--ey",  str(size), "--ez",  str(size)],
+        ["./build/bin/semproxy",  "--timemax", "1", "-o", "2", "--compute-histogram", "--compute-histogram-delay", "50", "--ex", str(size), "--ey",  str(size), "--ez",  str(size)],
         capture_output=True,
         text=True          
     )
@@ -48,7 +48,7 @@ def run_adhoc(size):
     # Exécution adhoc avec les snapshots + python3 histo.py pour chaque snapshot
     # saveSnapshotTime + time histo python
     result = subprocess.run(
-        ["./build/bin/semproxy", "--timemax", "0.4", "-o", "2", "--snapshot", "--sd", "50", "--ex", str(size), "--ey",  str(size), "--ez",  str(size)],
+        ["./build/bin/semproxy", "--timemax", "1", "-o", "2", "--snapshot", "--sd", "50", "--ex", str(size), "--ey",  str(size), "--ez",  str(size)],
         capture_output=True,
         text=True          
     )
