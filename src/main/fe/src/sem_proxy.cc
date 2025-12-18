@@ -551,6 +551,12 @@ char* float_to_cstring(float f) {
     return result;
 }
 
+std::filesystem::path executableDir() {
+    return std::filesystem::path(
+        std::filesystem::canonical("/proc/self/exe")
+    ).parent_path();
+}
+
 void SEMproxy::computeHistogram(int timestep) {
   // min et max
   float min = std::numeric_limits<float>::infinity();
@@ -587,11 +593,13 @@ void SEMproxy::computeHistogram(int timestep) {
   }
 
   // save 
-  std::string filename = "../data/histo/histo_" + std::to_string(timestep)
-                         + "_order" + std::to_string(order) + ".bin";
+  std::filesystem::path baseDir = executableDir();
+
+  std::filesystem::path filename = baseDir / ("../../data/histo/histo_" + std::to_string(timestep)
+                         + "_order" + std::to_string(order) + ".bin");
   std::ofstream out(filename);
   if (!out) {
-      std::cerr << "Error when opening the file " << filename << "\n";
+      std::cerr << "Error opening file " << filename<< ": " << std::strerror(errno) << "\n";
       return;
   }
   out << "bin_edges:\n";
@@ -604,34 +612,36 @@ void SEMproxy::computeHistogram(int timestep) {
     out << hist[i]<< ' ';
   }
   out << '\n';
+  out.close();
 }
 
 void SEMproxy::saveSnapshot(int timestep){
+  std::filesystem::path baseDir = executableDir();
 
-std::string filename =
-    "../data/snapshot/snapshot_" +
-    std::to_string(timestep) +
-    "_order" + std::to_string(order) +
-    ".bin";
+  std::filesystem::path filename = baseDir /
+      ("../../data/snapshot/snapshot_" +
+      std::to_string(timestep) +
+      "_order" + std::to_string(order) +
+      ".bin");
 
-std::ofstream out(filename);
-if (!out) {
-    std::cerr << "Error when opening the file " << filename << "\n";
-    return;
-}
-
-// Parcours des noeuds
-for (int n = 0; n < m_mesh->getNumberOfNodes(); n++) {
-  if ( m_mesh->nodeCoord(n,0) == 0 && n != 0 ){
-    out << "\n";
+  std::ofstream out(filename);
+  if (!out) {
+      std::cerr << "Error opening file " << filename<< ": " << std::strerror(errno) << "\n";
+      return;
   }
-    float value = pnGlobal(n, 1);
-    out << value;
-    out << " ";
-}
 
-out.close();
-std::cout << "Snapshot saved: " << filename << "\n";
+  // Parcours des noeuds
+  for (int n = 0; n < m_mesh->getNumberOfNodes(); n++) {
+    if ( m_mesh->nodeCoord(n,0) == 0 && n != 0 ){
+      out << "\n";
+    }
+      float value = pnGlobal(n, 1);
+      out << value;
+      out << " ";
+  }
+
+  out.close();
+  // std::cout << "Snapshot saved: " << filename << "\n";
 
 }
 
