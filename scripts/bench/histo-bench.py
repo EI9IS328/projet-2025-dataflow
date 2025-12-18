@@ -42,11 +42,12 @@ def run_adhoc():
         capture_output=True,
         text=True          
     )
-
+    # time to save snapshots
     adhoc_time = float(statsExec['snapshottime'])
     found = False
     for line in result.stdout.splitlines():
         if line.startswith("Time:"):
+            # time to compute histogram in python script
             adhoc_time += float(line.split(':')[1].strip()) * 1e6
             found = True 
     if not(found):
