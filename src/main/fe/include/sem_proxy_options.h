@@ -31,6 +31,7 @@ class SemProxyOptions
   bool isSnapshotOn = false;
   bool isStatsAnalysisOn = false;
   bool isComputeHistogramOn = false;
+  bool isComputeFourierOn = false;
   int computeHistogramInterval = 150;
 
   void validate() const
@@ -79,6 +80,7 @@ class SemProxyOptions
         cxxopts::value<bool>(o.isModelOnNodes))
         ("s,snapshot","Enable or disable saving snapshots",cxxopts::value<bool>(o.isSnapshotOn))
         ("sismo-points", "Path to sismo receptor points to save", cxxopts::value<std::string>(o.sismoPoints))
+        ("sismo-fourier", "Path to sismo receptor to do fourier", cxxopts::value<bool>(o.isComputeFourierOn))
         ("is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))
         ("stats-analysis", "stats analysis in-situ", cxxopts::value<bool>(o.isStatsAnalysisOn))
         ("compute-histogram","Enable or disable computing histogram for pressure value distribution",cxxopts::value<bool>(o.isComputeHistogramOn))
