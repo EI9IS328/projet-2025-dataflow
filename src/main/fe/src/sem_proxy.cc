@@ -22,6 +22,9 @@
 #include <ctime>
 #include <limits>
 
+#include <vector>
+#include <complex>
+#include <cmath>
 
 using namespace SourceAndReceiverUtils;
 
@@ -88,6 +91,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
   is_compute_histogram_ = opt.isComputeHistogramOn;
   compute_histogram_interval = opt.computeHistogramInterval;
+  is_compute_fourier = opt.isComputeFourierOn;
 
   const SolverFactory::methodType methodType = getMethod(opt.method);
   const SolverFactory::implemType implemType = getImplem(opt.implem);
@@ -316,25 +320,31 @@ void SEMproxy::run()
 
 
   }
+  if(is_compute_fourier){
+    computeFourier();
+  }
 
   // Save sismos for all receivers
-  startWriteSismoTime = system_clock::now();
-  for (int rcvIndex = 0; rcvIndex < sismoPoints.size(); rcvIndex++) {
-    // create file and write in it
-    std::ostringstream filename;
-    filename << "../data/sismos/" << sismoPoints[rcvIndex][0] << "-" <<  sismoPoints[rcvIndex][1] << "-" << sismoPoints[rcvIndex][2] << "-sismo.txt";
-    std::string fileNameStr = filename.str();
-    std::ofstream file(fileNameStr);  
-    
-    for (int sample = 0; sample<num_sample_; sample++) {
-      if (sample > 0) {file << " ";}
-      file << pnAtSismoPoints(rcvIndex, sample);
+  if(!is_compute_fourier){
+
+    startWriteSismoTime = system_clock::now();
+    for (int rcvIndex = 0; rcvIndex < sismoPoints.size(); rcvIndex++) {
+      // create file and write in it
+      std::ostringstream filename;
+      filename << "../data/sismos/" << sismoPoints[rcvIndex][0] << "-" <<  sismoPoints[rcvIndex][1] << "-" << sismoPoints[rcvIndex][2] << "-sismo.txt";
+      std::string fileNameStr = filename.str();
+      std::ofstream file(fileNameStr);  
+      
+      for (int sample = 0; sample<num_sample_; sample++) {
+        if (sample > 0) {file << " ";}
+        file << pnAtSismoPoints(rcvIndex, sample);
+      }
+      file << std::endl;
+      file.close();
+      std::cout << "Wrote sismos in " << fileNameStr << std::endl;
     }
-    file << std::endl;
-    file.close();
-    std::cout << "Wrote sismos in " << fileNameStr << std::endl;
+    totalWriteSismoTime += system_clock::now() - startWriteSismoTime;
   }
-  totalWriteSismoTime += system_clock::now() - startWriteSismoTime;
 
   float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)
                             .time_since_epoch()
@@ -621,6 +631,61 @@ void SEMproxy::computeHistogram(int timestep) {
   out.close();
 }
 
+typedef std::complex<double> Complex;
+
+std::vector<Complex> dft(const std::vector<Complex>& x) {
+    int N = x.size();
+    std::vector<Complex> X(N);
+    const double PI = std::acos(-1.0);
+
+    for (int k = 0; k < N; ++k) {
+        X[k] = Complex(0, 0);
+        for (int n = 0; n < N; ++n) {
+            double angle = (2.0 * PI * k * n) / N;
+            Complex exponent(std::cos(angle), -std::sin(angle));
+            X[k] += x[n] * exponent;
+        }
+    }
+    return X;
+  }
+
+void SEMproxy::computeFourier() {
+  for (int rcvIndex = 0; rcvIndex < sismoPoints.size(); rcvIndex++) {
+        std::vector<Complex> timeSignal;
+        timeSignal.reserve(num_sample_);
+        
+        for (int sample = 0; sample < num_sample_; sample++) {
+            timeSignal.push_back(Complex(pnAtSismoPoints(rcvIndex, sample), 0.0));
+        }
+
+        std::vector<Complex> fourierTransform = dft(timeSignal);
+        
+        // On ne garde que la moitié utile (jusqu'à la fréquence de Nyquist)
+        int half_n = fourierTransform.size() / 2;
+
+        std::ostringstream filename;
+        filename << "../data/fourier/fourier_insitu_" 
+                 << sismoPoints[rcvIndex][0] << "_" 
+                 << sismoPoints[rcvIndex][1] << "_" 
+                 << sismoPoints[rcvIndex][2] << ".csv";
+          
+        std::ofstream file(filename.str());
+        if (file.is_open()) {
+            file << "freq_idx,magnitude,real,imag\n";
+            for (int k = 0; k < half_n; ++k) {
+                file << k << "," 
+                     << std::abs(fourierTransform[k]) << "," 
+                     << fourierTransform[k].real() << "," 
+                     << fourierTransform[k].imag() << "\n";
+            }
+            file.close();
+            std::cout << "Fourier CSV (Nyquist only) saved for receiver at (" 
+                      << sismoPoints[rcvIndex][0] << "," 
+                      << sismoPoints[rcvIndex][1] << "," 
+                      << sismoPoints[rcvIndex][2] << ")" << std::endl;
+        }
+    }
+}
 void SEMproxy::saveSnapshot(int timestep){
   std::filesystem::path baseDir = executableDir();
 
@@ -647,7 +712,6 @@ void SEMproxy::saveSnapshot(int timestep){
   }
 
   out.close();
-  // std::cout << "Snapshot saved: " << filename << "\n";
 
 }
 
