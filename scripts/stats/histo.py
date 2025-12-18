@@ -24,11 +24,16 @@ else:
 
 print("On calcule l'histogramme pour ces fichiers:")
 print(files)
-# On convertit la/les snapshot en un grand tableau 1d avec toutes les valeurs
-data = []
+if len(files) == 0:
+    print("There is no file to work on")
+    exit(1)
+
+# # On convertit la/les snapshot en un grand tableau 1d avec toutes les valeurs
+# data = []
 t0 = time.time()
 
 for file_snapshot in files:
+    data = []
     with open(file_snapshot, 'r') as f:
         content = f.read()
     content.strip()
@@ -37,38 +42,41 @@ for file_snapshot in files:
         vals = l.strip().split(' ')
         vals = list(map(float, vals))
         data.extend(vals)
+    hist, bin_edges = np.histogram(data, bins=10) 
 
+
+t1 = time.time()
 
 
 
 # on calcule l'histogramme avec numpy pour pouvoir le chronométrer, et faire l'affichage dans un temps second
-hist, bin_edges = np.histogram(data, bins=10) 
+# hist, bin_edges = np.histogram(data, bins=10) 
 # hist[i] est le nombre de valeurs dans le bin numéro i
 
 # on sauvegarde l'histogramme ici aussi, puisqu'on le sauvegarde en insitu
-outputPath = './histo-adhoc.bin'
-with open(outputPath, 'w') as f:
-    f.write("bin_edges:\n")
-    for be in bin_edges:
-        f.write(f"{be} ")
-    f.write("\nhist:\n")
-    for hval in hist:
-        f.write(f"{hval} ")
-    f.write("\n")
+# outputPath = './histo-adhoc.bin'
+# with open(outputPath, 'w') as f:
+#     f.write("bin_edges:\n")
+#     for be in bin_edges:
+#         f.write(f"{be} ")
+#     f.write("\nhist:\n")
+#     for hval in hist:
+#         f.write(f"{hval} ")
+#     f.write("\n")
 
-t1 = time.time()
+# t1 = time.time()
 print("Time: ", t1 - t0)
 
-plt.bar(
-    bin_edges[:-1],
-    hist,
-    width=np.diff(bin_edges),
-    align="edge",
-    edgecolor="black",
-    linewidth=1.5
-)
+# plt.bar(
+#     bin_edges[:-1],
+#     hist,
+#     width=np.diff(bin_edges),
+#     align="edge",
+#     edgecolor="black",
+#     linewidth=1.5
+# )
 
-plt.ylabel("Nombre de valeurs of values")
-plt.title(f"Distribution de la fréquence dans la snapshot {filename}")
-plt.savefig('histogram-result.png')
+# plt.ylabel("Nombre de valeurs of values")
+# plt.title(f"Distribution de la fréquence dans la snapshot {filename}")
+# plt.savefig('histogram-result.png')
 # plt.show()

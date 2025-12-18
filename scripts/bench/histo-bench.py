@@ -1,8 +1,23 @@
 import subprocess
 import csv
+from tabulate import tabulate
 
-size = 20
+
 nb_iter = 5
+sizes = [10,15,20]
+
+
+
+def printStderr(stderr):
+    # print lines except the kokkos line
+    err = stderr.replace("""Kokkos::Cuda::initialize WARNING: Cuda is allocating into UVMSpace by default
+                                  without setting CUDA_MANAGED_FORCE_DEVICE_ALLOC=1 or
+                                  setting CUDA_VISIBLE_DEVICES.
+                                  This could on multi GPU systems lead to severe performance"
+                                  penalties.""", "")
+    err = err.strip()
+    if len(err) > 0:
+        print(err)
 
 
 def getExecStats(subprocess_stdout):
@@ -14,7 +29,7 @@ def getExecStats(subprocess_stdout):
         row = next(reader)
     return row
 
-def run_insitu():
+def run_insitu(size):
     # Faire exécution insitu pendant laquelle on calcule les histogrammes
     # histoTime
     # A noter: on compte les temps d'écriture des histo mais c'est peut etre pas bien à chronometrer pcq l'OS le fait pas en direct
@@ -23,11 +38,13 @@ def run_insitu():
         capture_output=True,
         text=True          
     )
+    if len(result.stderr) > 0:
+        printStderr(result.stderr)
     row = getExecStats(result.stdout)
     insitu_time = float(row['histotime']) 
     return insitu_time
 
-def run_adhoc():
+def run_adhoc(size):
     # Exécution adhoc avec les snapshots + python3 histo.py pour chaque snapshot
     # saveSnapshotTime + time histo python
     result = subprocess.run(
@@ -35,6 +52,8 @@ def run_adhoc():
         capture_output=True,
         text=True          
     )
+    if len(result.stderr) > 0:
+        printStderr(result.stderr)
     statsExec = getExecStats(result.stdout)
     # launch histo python adhoc
     result = subprocess.run(
@@ -52,24 +71,32 @@ def run_adhoc():
             found = True 
     if not(found):
         print("Did not find any time in stdout for python3 histo.py")
+        print(result.stderr)
     return adhoc_time
 
-total_insitu = 0
-total_adhoc = 0
-for i in range(nb_iter):
-    insitu_time = run_insitu()
-    print(f"[Iter {i}] in-situ: {insitu_time / 1e3} millisec")
-    total_insitu += insitu_time
 
-    adhoc_time = run_adhoc()
-    print(f"[Iter {i}] ad-hoc: {adhoc_time / 1e3} millisec")
-    total_adhoc += adhoc_time
+res_insitu = []
+res_adhoc = []
 
-avg_insitu = total_insitu / nb_iter
-avg_adhoc = total_adhoc / nb_iter
+for size in sizes: 
+    sum_insitu = 0
+    sum_adhoc = 0
+    for i in range(nb_iter):
+        insitu_time = run_insitu(size)
+        print(f"[Size {size}][Iter {i}] in-situ: {insitu_time / 1e3} millisec")
+        sum_insitu += insitu_time
+
+        adhoc_time = run_adhoc(size)
+        print(f"[Size {size}][Iter {i}] ad-hoc: {adhoc_time / 1e3} millisec")
+        sum_adhoc += adhoc_time
+    res_insitu.append( (sum_insitu / nb_iter) / 1e3)
+    res_adhoc.append( (sum_adhoc / nb_iter) / 1e3)
+    print("")
+
+
 
 print("")
 print("-------------")
-print("")
-print(f"Average in-situ: {avg_insitu / 1e3} millisec")
-print(f"Average ad-hoc: {avg_adhoc / 1e3} millisec")
+
+data = list(zip(sizes, res_insitu, res_adhoc))
+print(tabulate(data, headers=["Sizes", "Insitu (ms)", "Adhoc (ms)"],tablefmt="github"))
