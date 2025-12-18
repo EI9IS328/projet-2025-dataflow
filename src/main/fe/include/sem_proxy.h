@@ -77,7 +77,7 @@ class SEMproxy
   void saveSnapshot(int timestep);
   void statsAnalysis(int timestep);
   void computeHistogram(int timestep);
-
+  void computeFourier();
  private:
   int i1 = 0;
   int i2 = 1;
@@ -100,6 +100,8 @@ class SEMproxy
   // histogram computation
   bool is_compute_histogram_;
   int compute_histogram_interval;
+
+  bool is_compute_fourier;
 
   // physics
   bool isElastic_;
