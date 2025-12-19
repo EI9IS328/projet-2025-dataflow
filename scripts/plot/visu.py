@@ -4,7 +4,7 @@ import seaborn as sns
 import re
 
 
-filename = "../data/snapshot/snapshot_600_order1.bin" 
+filename = "./data/snapshot/snapshot_1300_order2.bin" 
 
 match = re.search(r"order(\d+)", filename)
 order = int(match.group(1)) if match else None
@@ -30,4 +30,4 @@ sns.heatmap(data_array, cmap="viridis")
 plt.title(f"Heatmap from line {start_line} to {start_line + Y_lines} in {filename}")
 plt.xlabel("X")
 plt.ylabel("Y")
-plt.show()
+plt.savefig("visuslice-adhoc.png")

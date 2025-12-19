@@ -33,6 +33,7 @@ class SemProxyOptions
   bool isComputeHistogramOn = false;
   bool isComputeFourierOn = false;
   int computeHistogramInterval = 150;
+  int sliceSnapshotCoord = -1;
 
   void validate() const
   {
@@ -85,6 +86,8 @@ class SemProxyOptions
         ("stats-analysis", "stats analysis in-situ", cxxopts::value<bool>(o.isStatsAnalysisOn))
         ("compute-histogram","Enable or disable computing histogram for pressure value distribution",cxxopts::value<bool>(o.isComputeHistogramOn))
         ("compute-histogram-delay", "Delay between each histogram computation (step (ms) )", cxxopts::value<int>(o.computeHistogramInterval))
-        ("sd,snapshot-delay", "Delay between each snapshot (step (ms) )", cxxopts::value<int>(o.snap_time_interval));
+        ("sd,snapshot-delay", "Delay between each snapshot (step (ms) )", cxxopts::value<int>(o.snap_time_interval))
+        ("slice-snapshot", "Enable snapshots at given coordinates. Will use the --snapshot-delay parameter for delay", cxxopts::value<int>(o.sliceSnapshotCoord))
+        ;
   }
 };

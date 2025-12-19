@@ -88,6 +88,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
   is_snapshots_ =  opt.isSnapshotOn;
   is_stats_analysis_ = opt.isStatsAnalysisOn;
+  slice_snapshots_coords_ = opt.sliceSnapshotCoord;
 
   is_compute_histogram_ = opt.isComputeHistogramOn;
   compute_histogram_interval = opt.computeHistogramInterval;
@@ -318,6 +319,9 @@ void SEMproxy::run()
       totalHistoTime += system_clock::now() - startHistoTime;
     }
 
+    if (indexTimeSample % snap_time_interval_ == 0 && slice_snapshots_coords_ != -1) {
+      saveSliceSnapshot(indexTimeSample, slice_snapshots_coords_);
+    }
 
   }
   if(is_compute_fourier){
@@ -712,6 +716,43 @@ void SEMproxy::saveSnapshot(int timestep){
   }
 
   out.close();
+
+}
+
+void SEMproxy::saveSliceSnapshot(int timestep, int dim2Coord) {
+  std::filesystem::path baseDir = executableDir();
+
+  std::filesystem::path filename = baseDir /
+      ("../../data/slice_snapshot/slice-snapshot_" +
+      std::to_string(timestep) +
+      "_order" + std::to_string(order) +
+      ".bin");
+
+  std::ofstream out(filename);
+  if (!out) {
+      std::cerr << "Error opening file " << filename<< ": " << std::strerror(errno) << "\n";
+      return;
+  }
+
+  // on save un plan en fixant une coordonnée sur la dimension 2
+  if (nb_nodes_[2] <= dim2Coord) {
+    std::cerr << "The provided dim2Coord for slice snapshot is too high." << std::endl;
+    return;
+  }
+  int sizePlan = nb_nodes_[0] * nb_nodes_[1];
+  int start = dim2Coord * sizePlan;
+  int end = (dim2Coord + 1) * sizePlan;
+  // on veut save tout ce qui est entre start et end
+  for (int n = start; n<end; n++) {
+    if ( m_mesh->nodeCoord(n,0) == 0 && n != start ){
+      out << "\n";
+    }
+      float value = pnGlobal(n, 1);
+      out << value;
+      out << " ";
+  }
+  out.close();
+  std::cout << "Done saving slice snapshot" << std::endl;
 
 }
 
