@@ -345,10 +345,14 @@ void SEMproxy::run()
     startWriteSismoTime = system_clock::now();
     for (int rcvIndex = 0; rcvIndex < sismoPoints.size(); rcvIndex++) {
       // create file and write in it
-      std::ostringstream filename;
-      filename << "../data/sismos/" << sismoPoints[rcvIndex][0] << "-" <<  sismoPoints[rcvIndex][1] << "-" << sismoPoints[rcvIndex][2] << "-sismo.txt";
-      std::string fileNameStr = filename.str();
-      std::ofstream file(fileNameStr);  
+      std::filesystem::path baseDir = executableDir();
+      std::filesystem::path filename = baseDir / ("../../data/sismos/" + std::to_string((int)sismoPoints[rcvIndex][0]) + "-" + 
+                                        std::to_string((int)sismoPoints[rcvIndex][1]) + "-" + std::to_string((int)sismoPoints[rcvIndex][2]) + "-sismo.txt");
+      std::ofstream file(filename);  
+      if (!file) {
+          std::cerr << "Error opening file " << filename<< ": " << std::strerror(errno) << "\n";
+          return;
+      }
       
       for (int sample = 0; sample<num_sample_; sample++) {
         if (sample > 0) {file << " ";}
@@ -356,7 +360,7 @@ void SEMproxy::run()
       }
       file << std::endl;
       file.close();
-      std::cout << "Wrote sismos in " << fileNameStr << std::endl;
+      std::cout << "Wrote sismos in " << filename << std::endl;
     }
     totalWriteSismoTime += system_clock::now() - startWriteSismoTime;
   }
