@@ -1,3 +1,6 @@
+import warnings
+
+warnings.filterwarnings("ignore", category=UserWarning)
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -72,8 +75,9 @@ for singleFile in files:
 
   plt.xlabel("X")
   plt.ylabel("Y")
-  outputPath = f"{ (singleFile.split('/'))[-1].split('.')[:-1][0]}--visu_slice.png"
+  outputPath = f"/tmp/{ (singleFile.split('/'))[-1].split('.')[:-1][0]}--visu_slice.png"
   plt.savefig(outputPath)
+  plt.close()
 
 t1 = time.time()
 
