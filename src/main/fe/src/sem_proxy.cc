@@ -53,6 +53,12 @@ void parseSismoPoints(std::string path, std::vector<std::array<float, 3>> * resu
   
 }
 
+std::filesystem::path executableDir() {
+    return std::filesystem::path(
+        std::filesystem::canonical("/proc/self/exe")
+    ).parent_path();
+}
+
 SEMproxy::SEMproxy(const SemProxyOptions& opt)
 {
   order = opt.order;
@@ -213,17 +219,27 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
 }
 
-void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismotime_ms, float histotime_ms, float snapshottime_ms, 
-                        float slicesnaptime_ms, float * domain_size_, int * nb_elements_, int order) {
-  // determine file name, create file
-  std::ostringstream filename;
-  std::time_t timestamp = std::time(nullptr);
-  filename << timestamp << "-execution.csv";
 
-  std::string fileNameStr = filename.str();
-  std::ofstream file(fileNameStr);  
-  // cols
-  file << "timestamp,kerneltime,outputtime,writesismotime,histotime,snapshottime,slicesnaptime,ex,ey,ez,lx,ly,lz,order";
+void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismotime_ms, float histotime_ms, float fourier_ms,
+                        float snapshottime_ms, float slicesnaptime_ms, float * domain_size_, int * nb_elements_, int order) {
+
+  // determine file name, create file
+  std::filesystem::path baseDir = executableDir();       
+  std::time_t timestamp = std::time(nullptr);
+
+
+  std::string baseName = std::to_string(timestamp) + "-execution.csv";
+  std::filesystem::path fullPath = baseDir / ".." / ".." / "data" / "trace" / baseName;
+                        
+  std::filesystem::create_directories(fullPath.parent_path());
+  std::ofstream file(fullPath);
+
+  if (!file.is_open()) {
+    std::cerr << "Erreur : Impossible de créer le fichier dans " << fullPath << std::endl;
+  }
+
+  file << "timestamp,kerneltime,outputtime,writesismotime,histotime,snapshottime,fouriertime,slicesnaptime,ex,ey,ez,lx,ly,lz,order";
+
   file << std::endl;
 
   float lx = domain_size_[0];
@@ -239,6 +255,7 @@ void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismot
   file<<","<<writesismotime_ms;
   file<<","<<histotime_ms;
   file<<","<<snapshottime_ms;
+  file<<","<<fourier_ms;
   file<<","<<slicesnaptime_ms;
   file<<","<<ex<<","<<ey<<","<<ez;
   file<<","<<lx<<","<<ly<<","<<lz;
@@ -246,14 +263,15 @@ void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismot
   file << std::endl;
   file.close();
 
-  std::cout << "Exec stats: " << fileNameStr << std::endl;
+  std::cout << "Exec stats: " << fullPath << std::endl;
 }
 
 void SEMproxy::run()
 {
   time_point<system_clock> startComputeTime, startOutputTime, totalComputeTime,
-      totalOutputTime, startWriteSismoTime, totalWriteSismoTime, 
-      startHistoTime, totalHistoTime, startSnapshotTime, totalSnapshotTime, startSliceSnapTime, totalSliceSnapTime;
+      totalOutputTime, startWriteSismoTime, totalWriteSismoTime, startHistoTime, totalHistoTime, 
+    startSnapshotTime, totalSnapshotTime, startFourierTime, totalFourierTime, startSliceSnapTime, totalSliceSnapTime;
+
 
   SEMsolverDataAcoustic solverData(i1, i2, myRHSTerm, pnGlobal, rhsElement,
                                    rhsWeights);
@@ -334,7 +352,9 @@ void SEMproxy::run()
 
   }
   if(is_compute_fourier){
+    startFourierTime = system_clock::now();
     computeFourier();
+    totalFourierTime += system_clock::now() - startFourierTime;
   }
 
   // Save sismos for all receivers
@@ -369,6 +389,7 @@ void SEMproxy::run()
 
   float histotime_ms = time_point_cast<microseconds>(totalHistoTime).time_since_epoch().count();
   float slicesnaptime_ms = time_point_cast<microseconds>(totalSliceSnapTime).time_since_epoch().count();
+  float fourier_ms = time_point_cast<microseconds>(totalFourierTime).time_since_epoch().count();
   float snapshottime_ms = time_point_cast<microseconds>(totalSnapshotTime).time_since_epoch().count();
 
   cout << "------------------------------------------------ " << endl;
@@ -379,7 +400,7 @@ void SEMproxy::run()
   cout << "---- Elapsed write sismo time : " << writesismotime_ms / 1E6 << " seconds." << endl;
   cout << "------------------------------------------------ " << endl;
 
-  saveMetricsToFile(kerneltime_ms, outputtime_ms, writesismotime_ms, histotime_ms, snapshottime_ms, slicesnaptime_ms, domain_size_,nb_elements_, order);
+  saveMetricsToFile(kerneltime_ms, outputtime_ms, writesismotime_ms, histotime_ms, snapshottime_ms, fourier_ms, slicesnaptime_ms, domain_size_,nb_elements_, order);
 
 }
 
@@ -579,12 +600,6 @@ char* float_to_cstring(float f) {
     char* result = new char[tmp.size() + 1];
     std::strcpy(result, tmp.c_str());
     return result;
-}
-
-std::filesystem::path executableDir() {
-    return std::filesystem::path(
-        std::filesystem::canonical("/proc/self/exe")
-    ).parent_path();
 }
 
 void SEMproxy::computeHistogram(int timestep) {

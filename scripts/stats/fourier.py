@@ -3,6 +3,8 @@ import pandas as pd
 import sys
 import os
 import re
+import time
+
 
 def process_single_file(filepath, dt=0.001):
     if not os.path.exists(filepath):
@@ -56,4 +58,7 @@ if __name__ == "__main__":
     else:
         file_path = sys.argv[1]
         delta_t = float(sys.argv[2]) if len(sys.argv) > 2 else 0.001
+        t0 = time.time()
         process_single_file(file_path, delta_t)
+        t1 = time.time()
+        print("Time: ", t1 - t0)
