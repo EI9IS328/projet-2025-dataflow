@@ -52,15 +52,15 @@ def run_adhoc(size):
         capture_output=True,
         text=True          
     )
-    if len(result.stderr) > 0:
-        printStderr(result.stderr)
+    printStderr(result.stderr)
     statsExec = getExecStats(result.stdout)
     # launch histo python adhoc
     result = subprocess.run(
-        ["python3", "scripts/stats/histo.py", "./data/snapshot/"],
+        ["python3", "scripts/stats/histo.py", "/tmp/insitu/data/snapshot/"],
         capture_output=True,
         text=True          
     )
+    printStderr(result.stderr)
     # time to save snapshots
     adhoc_time = float(statsExec['snapshottime'])
     found = False
