@@ -94,6 +94,8 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
   is_snapshots_ =  opt.isSnapshotOn;
   is_stats_analysis_ = opt.isStatsAnalysisOn;
+  slice_snapshots_coords_ = opt.sliceSnapshotCoord;
+  slice_snapshots_to_PPM_ = opt.saveSliceSnapshotToPPM;
 
   is_compute_histogram_ = opt.isComputeHistogramOn;
   compute_histogram_interval = opt.computeHistogramInterval;
@@ -217,11 +219,14 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
 }
 
-void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismotime_ms, float histotime_ms, float fourier_ms,float snapshottime_ms,
-                        float * domain_size_, int * nb_elements_, int order) {
+
+void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismotime_ms, float histotime_ms, float fourier_ms,
+                        float snapshottime_ms, float slicesnaptime_ms, float * domain_size_, int * nb_elements_, int order) {
+
   // determine file name, create file
   std::filesystem::path baseDir = executableDir();       
   std::time_t timestamp = std::time(nullptr);
+
 
   std::string baseName = std::to_string(timestamp) + "-execution.csv";
   std::filesystem::path fullPath = baseDir / ".." / ".." / "data" / "trace" / baseName;
@@ -233,7 +238,8 @@ void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismot
     std::cerr << "Erreur : Impossible de créer le fichier dans " << fullPath << std::endl;
   }
 
-  file << "timestamp,kerneltime,outputtime,writesismotime,histotime,snapshottime,fouriertime,ex,ey,ez,lx,ly,lz,order";
+  file << "timestamp,kerneltime,outputtime,writesismotime,histotime,snapshottime,fouriertime,slicesnaptime,ex,ey,ez,lx,ly,lz,order";
+
   file << std::endl;
 
   float lx = domain_size_[0];
@@ -250,6 +256,7 @@ void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismot
   file<<","<<histotime_ms;
   file<<","<<snapshottime_ms;
   file<<","<<fourier_ms;
+  file<<","<<slicesnaptime_ms;
   file<<","<<ex<<","<<ey<<","<<ez;
   file<<","<<lx<<","<<ly<<","<<lz;
   file<<","<<order;
@@ -262,8 +269,9 @@ void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismot
 void SEMproxy::run()
 {
   time_point<system_clock> startComputeTime, startOutputTime, totalComputeTime,
-      totalOutputTime, startWriteSismoTime, totalWriteSismoTime, 
-      startHistoTime, totalHistoTime, startSnapshotTime, totalSnapshotTime, startFourierTime, totalFourierTime;
+      totalOutputTime, startWriteSismoTime, totalWriteSismoTime, startHistoTime, totalHistoTime, 
+    startSnapshotTime, totalSnapshotTime, startFourierTime, totalFourierTime, startSliceSnapTime, totalSliceSnapTime;
+
 
   SEMsolverDataAcoustic solverData(i1, i2, myRHSTerm, pnGlobal, rhsElement,
                                    rhsWeights);
@@ -331,6 +339,16 @@ void SEMproxy::run()
       totalHistoTime += system_clock::now() - startHistoTime;
     }
 
+    if (indexTimeSample % snap_time_interval_ == 0 && slice_snapshots_coords_ != -1) {
+      startSliceSnapTime = system_clock::now();
+      if (slice_snapshots_to_PPM_) {
+        saveSliceSnapshotPPM(indexTimeSample, slice_snapshots_coords_);
+      }
+      else {
+        saveSliceSnapshotBin(indexTimeSample, slice_snapshots_coords_);
+      }
+      totalSliceSnapTime += system_clock::now() - startSliceSnapTime;
+    }
 
   }
   if(is_compute_fourier){
@@ -374,6 +392,7 @@ void SEMproxy::run()
   float writesismotime_ms = time_point_cast<microseconds>(totalWriteSismoTime).time_since_epoch().count();
 
   float histotime_ms = time_point_cast<microseconds>(totalHistoTime).time_since_epoch().count();
+  float slicesnaptime_ms = time_point_cast<microseconds>(totalSliceSnapTime).time_since_epoch().count();
   float fourier_ms = time_point_cast<microseconds>(totalFourierTime).time_since_epoch().count();
   float snapshottime_ms = time_point_cast<microseconds>(totalSnapshotTime).time_since_epoch().count();
 
@@ -385,7 +404,7 @@ void SEMproxy::run()
   cout << "---- Elapsed write sismo time : " << writesismotime_ms / 1E6 << " seconds." << endl;
   cout << "------------------------------------------------ " << endl;
 
-  saveMetricsToFile(kerneltime_ms, outputtime_ms, writesismotime_ms, histotime_ms, fourier_ms,snapshottime_ms, domain_size_,nb_elements_, order);
+  saveMetricsToFile(kerneltime_ms, outputtime_ms, writesismotime_ms, histotime_ms, snapshottime_ms, fourier_ms, slicesnaptime_ms, domain_size_,nb_elements_, order);
 
 }
 
@@ -703,8 +722,13 @@ void SEMproxy::computeFourier() {
 void SEMproxy::saveSnapshot(int timestep){
   std::filesystem::path baseDir = executableDir();
 
-  std::filesystem::path filename = baseDir /
-      ("../../data/snapshot/snapshot_" +
+  // std::filesystem::path filename = baseDir /
+  //     ("../../data/snapshot/snapshot_" +
+  //     std::to_string(timestep) +
+  //     "_order" + std::to_string(order) +
+  //     ".bin");
+
+  std::filesystem::path filename = ("/tmp/insitu/data/snapshot/snapshot_" +
       std::to_string(timestep) +
       "_order" + std::to_string(order) +
       ".bin");
@@ -727,6 +751,115 @@ void SEMproxy::saveSnapshot(int timestep){
 
   out.close();
 
+}
+
+void SEMproxy::saveSliceSnapshotBin(int timestep, int dim2Coord) {
+  std::filesystem::path baseDir = executableDir();
+
+  // std::filesystem::path filename = baseDir /
+  //     ("../../data/slice_snapshot/slice-snapshot_" +
+  //     std::to_string(timestep) +
+  //     "_order" + std::to_string(order) +
+  //     ".bin");
+  std::filesystem::path filename = ("/tmp/insitu/data/slice_snapshot/slice-snapshot_" +
+      std::to_string(timestep) +
+      "_order" + std::to_string(order) +
+      ".bin");
+
+  std::ofstream out(filename);
+  if (!out) {
+      std::cerr << "Error opening file " << filename<< ": " << std::strerror(errno) << "\n";
+      return;
+  }
+
+  // on save un plan en fixant une coordonnée sur la dimension 2
+  if (nb_nodes_[2] <= dim2Coord) {
+    std::cerr << "The provided dim2Coord for slice snapshot is too high." << std::endl;
+    return;
+  }
+  int sizePlan = nb_nodes_[0] * nb_nodes_[1];
+  int start = dim2Coord * sizePlan;
+  int end = (dim2Coord + 1) * sizePlan;
+  // on veut save tout ce qui est entre start et end
+  for (int n = start; n<end; n++) {
+    if ( m_mesh->nodeCoord(n,0) == 0 && n != start ){
+      out << "\n";
+    }
+      float value = pnGlobal(n, 1);
+      out << value;
+      out << " ";
+  }
+  out.close();
+  std::cout << "Done saving slice snapshot" << std::endl;
+
+}
+
+void SEMproxy::saveSliceSnapshotPPM(int timestep, int dim2Coord) {
+    std::filesystem::path baseDir = executableDir();
+    // std::filesystem::path filename = baseDir /
+    //   ("../../data/slice_snapshot/slice-snapshot_" +
+    //   std::to_string(timestep) +
+    //   "_order" + std::to_string(order) +
+    //   ".ppm");
+    std::filesystem::path filename = ("/tmp/insitu/data/slice_snapshot/slice-snapshot_" +
+      std::to_string(timestep) +
+      "_order" + std::to_string(order) +
+      ".ppm");
+
+    std::ofstream out(filename);
+    if (!out) {
+        std::cerr << "Error opening file " << filename<< ": " << std::strerror(errno) << "\n";
+        return;
+    }
+    // on save un plan en fixant une coordonnée sur la dimension 2
+    if (nb_nodes_[2] <= dim2Coord) {
+      std::cerr << "The provided dim2Coord for slice snapshot is too high." << std::endl;
+      return;
+    }
+
+    int largeur = nb_nodes_[0];
+    int hauteur = nb_nodes_[1];
+    int sizePlan = largeur * hauteur;
+    int start = dim2Coord * sizePlan;
+    int end = (dim2Coord + 1) * sizePlan;
+
+    out << "P3\n";
+    out << largeur << " " << hauteur << "\n";
+    out << "255\n"; // valeur max
+
+    // trouver le min / max local
+    float minVal = INFINITY;
+    float maxVal = -INFINITY;
+    for (int n = start; n<end; n++) {
+      float value = pnGlobal(n,1);
+      minVal = fmin(minVal, value);
+      maxVal = fmax(maxVal, value);
+    }
+
+    // on veut save tout ce qui est entre start et end
+    for (int n = start; n<end; n++) {
+      float value = pnGlobal(n, 1);
+
+      // normaliser la pression
+      float pr = (value - minVal) / (maxVal - minVal);
+      pr = fmax(0, pr);
+      pr = fmin(1, pr);
+      // gradient linéaire allant de couleur0 à couleur1
+      int R0=0, G0=0, B0=255;   // bleu
+      int R1=0, G1=255, B1=0;   // vert
+
+      int R = int((1-pr)*R0 + pr*R1);
+      int G = int((1-pr)*G0 + pr*G1);
+      int B = int((1-pr)*B0 + pr*B1);
+      
+
+      if (n > start) {
+        out << " ";
+      }
+      out << R << " " << G << " " << B;
+    }
+
+    out.close();
 }
 
 
