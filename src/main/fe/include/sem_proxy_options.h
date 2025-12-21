@@ -34,6 +34,7 @@ class SemProxyOptions
   bool isComputeFourierOn = false;
   int computeHistogramInterval = 150;
   int sliceSnapshotCoord = -1;
+  bool saveSliceSnapshotToPPM = false; // if false save as bin
 
   void validate() const
   {
@@ -88,6 +89,7 @@ class SemProxyOptions
         ("compute-histogram-delay", "Delay between each histogram computation (step (ms) )", cxxopts::value<int>(o.computeHistogramInterval))
         ("sd,snapshot-delay", "Delay between each snapshot (step (ms) )", cxxopts::value<int>(o.snap_time_interval))
         ("slice-snapshot", "Enable snapshots at given coordinates. Will use the --snapshot-delay parameter for delay", cxxopts::value<int>(o.sliceSnapshotCoord))
+        ("slice-ppm", "Save slice snapshots as PPM format. Saving slice snapshots without this option result in binary save", cxxopts::value<bool>(o.saveSliceSnapshotToPPM))
         ;
-  }
+  } 
 };

@@ -89,6 +89,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   is_snapshots_ =  opt.isSnapshotOn;
   is_stats_analysis_ = opt.isStatsAnalysisOn;
   slice_snapshots_coords_ = opt.sliceSnapshotCoord;
+  slice_snapshots_to_PPM_ = opt.saveSliceSnapshotToPPM;
 
   is_compute_histogram_ = opt.isComputeHistogramOn;
   compute_histogram_interval = opt.computeHistogramInterval;
@@ -320,7 +321,12 @@ void SEMproxy::run()
     }
 
     if (indexTimeSample % snap_time_interval_ == 0 && slice_snapshots_coords_ != -1) {
-      saveSliceSnapshot(indexTimeSample, slice_snapshots_coords_);
+      if (slice_snapshots_to_PPM_) {
+        saveSliceSnapshotPPM(indexTimeSample, slice_snapshots_coords_);
+      }
+      else {
+        saveSliceSnapshotBin(indexTimeSample, slice_snapshots_coords_);
+      }
     }
 
   }
@@ -719,7 +725,7 @@ void SEMproxy::saveSnapshot(int timestep){
 
 }
 
-void SEMproxy::saveSliceSnapshot(int timestep, int dim2Coord) {
+void SEMproxy::saveSliceSnapshotBin(int timestep, int dim2Coord) {
   std::filesystem::path baseDir = executableDir();
 
   std::filesystem::path filename = baseDir /
@@ -754,6 +760,74 @@ void SEMproxy::saveSliceSnapshot(int timestep, int dim2Coord) {
   out.close();
   std::cout << "Done saving slice snapshot" << std::endl;
 
+}
+
+float normalizePressure(float pressureValue, float min, float max) {
+    return (pressureValue - min) / (max - min);
+}
+
+void SEMproxy::saveSliceSnapshotPPM(int timestep, int dim2Coord) {
+    std::filesystem::path baseDir = executableDir();
+    std::filesystem::path filename = baseDir /
+      ("../../data/slice_snapshot/slice-snapshot_" +
+      std::to_string(timestep) +
+      "_order" + std::to_string(order) +
+      ".ppm");
+
+    std::ofstream out(filename);
+    if (!out) {
+        std::cerr << "Error opening file " << filename<< ": " << std::strerror(errno) << "\n";
+        return;
+    }
+    // on save un plan en fixant une coordonnée sur la dimension 2
+    if (nb_nodes_[2] <= dim2Coord) {
+      std::cerr << "The provided dim2Coord for slice snapshot is too high." << std::endl;
+      return;
+    }
+
+    int largeur = nb_nodes_[0];
+    int hauteur = nb_nodes_[1];
+    int sizePlan = largeur * hauteur;
+    int start = dim2Coord * sizePlan;
+    int end = (dim2Coord + 1) * sizePlan;
+
+    out << "P3\n";
+    out << largeur << " " << hauteur << "\n";
+    out << "255\n"; // valeur max
+
+    // trouver le min / max local
+    float minVal = INFINITY;
+    float maxVal = -INFINITY;
+    for (int n = start; n<end; n++) {
+      float value = pnGlobal(n,1);
+      minVal = fmin(minVal, value);
+      maxVal = fmax(maxVal, value);
+    }
+
+    // on veut save tout ce qui est entre start et end
+    for (int n = start; n<end; n++) {
+      float value = pnGlobal(n, 1);
+
+      // normaliser la pression
+      float pr = (value - minVal) / (maxVal - minVal);
+      pr = fmax(0, pr);
+      pr = fmin(1, pr);
+      // gradient linéaire allant de couleur0 à couleur1
+      int R0=0, G0=0, B0=255;   // bleu
+      int R1=0, G1=255, B1=0;   // vert
+
+      int R = int((1-pr)*R0 + pr*R1);
+      int G = int((1-pr)*G0 + pr*G1);
+      int B = int((1-pr)*B0 + pr*B1);
+      
+
+      if (n > start) {
+        out << " ";
+      }
+      out << R << " " << G << " " << B;
+    }
+
+    out.close();
 }
 
 
