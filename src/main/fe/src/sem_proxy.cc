@@ -703,8 +703,13 @@ void SEMproxy::computeFourier() {
 void SEMproxy::saveSnapshot(int timestep){
   std::filesystem::path baseDir = executableDir();
 
-  std::filesystem::path filename = baseDir /
-      ("../../data/snapshot/snapshot_" +
+  // std::filesystem::path filename = baseDir /
+  //     ("../../data/snapshot/snapshot_" +
+  //     std::to_string(timestep) +
+  //     "_order" + std::to_string(order) +
+  //     ".bin");
+
+  std::filesystem::path filename = ("/tmp/insitu/data/snapshot/snapshot_" +
       std::to_string(timestep) +
       "_order" + std::to_string(order) +
       ".bin");
@@ -732,8 +737,12 @@ void SEMproxy::saveSnapshot(int timestep){
 void SEMproxy::saveSliceSnapshotBin(int timestep, int dim2Coord) {
   std::filesystem::path baseDir = executableDir();
 
-  std::filesystem::path filename = baseDir /
-      ("../../data/slice_snapshot/slice-snapshot_" +
+  // std::filesystem::path filename = baseDir /
+  //     ("../../data/slice_snapshot/slice-snapshot_" +
+  //     std::to_string(timestep) +
+  //     "_order" + std::to_string(order) +
+  //     ".bin");
+  std::filesystem::path filename = ("/tmp/insitu/data/slice_snapshot/slice-snapshot_" +
       std::to_string(timestep) +
       "_order" + std::to_string(order) +
       ".bin");
@@ -768,8 +777,12 @@ void SEMproxy::saveSliceSnapshotBin(int timestep, int dim2Coord) {
 
 void SEMproxy::saveSliceSnapshotPPM(int timestep, int dim2Coord) {
     std::filesystem::path baseDir = executableDir();
-    std::filesystem::path filename = baseDir /
-      ("../../data/slice_snapshot/slice-snapshot_" +
+    // std::filesystem::path filename = baseDir /
+    //   ("../../data/slice_snapshot/slice-snapshot_" +
+    //   std::to_string(timestep) +
+    //   "_order" + std::to_string(order) +
+    //   ".ppm");
+    std::filesystem::path filename = ("/tmp/insitu/data/slice_snapshot/slice-snapshot_" +
       std::to_string(timestep) +
       "_order" + std::to_string(order) +
       ".ppm");
