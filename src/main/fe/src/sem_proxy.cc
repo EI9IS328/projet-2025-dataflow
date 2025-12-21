@@ -762,10 +762,6 @@ void SEMproxy::saveSliceSnapshotBin(int timestep, int dim2Coord) {
 
 }
 
-float normalizePressure(float pressureValue, float min, float max) {
-    return (pressureValue - min) / (max - min);
-}
-
 void SEMproxy::saveSliceSnapshotPPM(int timestep, int dim2Coord) {
     std::filesystem::path baseDir = executableDir();
     std::filesystem::path filename = baseDir /
