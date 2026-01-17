@@ -222,7 +222,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
 
 void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismotime_ms, float histotime_ms, float fourier_ms,
-                        float snapshottime_ms, float slicesnaptime_ms, float * domain_size_, int * nb_elements_, int order) {
+                        float snapshottime_ms, float slicesnaptime_ms,float statstime_ms, float * domain_size_, int * nb_elements_, int order) {
 
   // determine file name, create file
   std::filesystem::path baseDir = executableDir();       
@@ -239,7 +239,7 @@ void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismot
     std::cerr << "Erreur : Impossible de créer le fichier dans " << fullPath << std::endl;
   }
 
-  file << "timestamp,kerneltime,outputtime,writesismotime,histotime,snapshottime,fouriertime,slicesnaptime,ex,ey,ez,lx,ly,lz,order";
+  file << "timestamp,kerneltime,outputtime,writesismotime,histotime,snapshottime,fouriertime,slicesnaptime,statstime,ex,ey,ez,lx,ly,lz,order";
 
   file << std::endl;
 
@@ -258,6 +258,7 @@ void saveMetricsToFile(float kerneltime_ms,float outputtime_ms,float writesismot
   file<<","<<snapshottime_ms;
   file<<","<<fourier_ms;
   file<<","<<slicesnaptime_ms;
+  file << "," << statstime_ms;
   file<<","<<ex<<","<<ey<<","<<ez;
   file<<","<<lx<<","<<ly<<","<<lz;
   file<<","<<order;
@@ -271,7 +272,7 @@ void SEMproxy::run()
 {
   time_point<system_clock> startComputeTime, startOutputTime, totalComputeTime,
       totalOutputTime, startWriteSismoTime, totalWriteSismoTime, startHistoTime, totalHistoTime, 
-    startSnapshotTime, totalSnapshotTime, startFourierTime, totalFourierTime, startSliceSnapTime, totalSliceSnapTime;
+    startSnapshotTime, startStatsTime, totalSnapshotTime, startFourierTime, totalFourierTime, startSliceSnapTime, totalSliceSnapTime, totalStatsTime;
 
 
   SEMsolverDataAcoustic solverData(i1, i2, myRHSTerm, pnGlobal, rhsElement,
@@ -331,7 +332,9 @@ void SEMproxy::run()
       totalSnapshotTime += system_clock::now() - startSnapshotTime;
     }
     if (indexTimeSample % stats_analysis_interval == 0 &&  is_stats_analysis_ == true) {
+      startStatsTime = system_clock::now();
       statsAnalysis(indexTimeSample);
+      totalStatsTime += system_clock::now() - startStatsTime;
     }
 
     if (indexTimeSample % compute_histogram_interval == 0 && is_compute_histogram_ == true) {
@@ -396,6 +399,7 @@ void SEMproxy::run()
   float slicesnaptime_ms = time_point_cast<microseconds>(totalSliceSnapTime).time_since_epoch().count();
   float fourier_ms = time_point_cast<microseconds>(totalFourierTime).time_since_epoch().count();
   float snapshottime_ms = time_point_cast<microseconds>(totalSnapshotTime).time_since_epoch().count();
+  float statstime_ms = time_point_cast<microseconds>(totalStatsTime).time_since_epoch().count();
 
   cout << "------------------------------------------------ " << endl;
   cout << "\n---- Elapsed Kernel Time : " << kerneltime_ms / 1E6 << " seconds."
@@ -403,9 +407,10 @@ void SEMproxy::run()
   cout << "---- Elapsed Output Time : " << outputtime_ms / 1E6 << " seconds."
        << endl;
   cout << "---- Elapsed write sismo time : " << writesismotime_ms / 1E6 << " seconds." << endl;
+  cout << "---- Elapsed Stats In-Situ Time : " << statstime_ms / 1E6 << " seconds." << endl;
   cout << "------------------------------------------------ " << endl;
 
-  saveMetricsToFile(kerneltime_ms, outputtime_ms, writesismotime_ms, histotime_ms, snapshottime_ms, fourier_ms, slicesnaptime_ms, domain_size_,nb_elements_, order);
+  saveMetricsToFile(kerneltime_ms, outputtime_ms, writesismotime_ms, histotime_ms, snapshottime_ms, fourier_ms, slicesnaptime_ms, statstime_ms, domain_size_,nb_elements_, order);
 
 }
 
@@ -865,31 +870,43 @@ void SEMproxy::saveSliceSnapshotPPM(int timestep, int dim2Coord) {
 
 
 void SEMproxy::statsAnalysis(int timestep){
-  double sum = 0.0;
-  double sumSquared = 0.0;
-  double minVal = std::numeric_limits<double>::infinity();
-  double maxVal = -std::numeric_limits<double>::infinity();
-  int count = 0;
+    double sum = 0.0;
+    double sumSquared = 0.0;
+    double minVal = std::numeric_limits<double>::infinity();
+    double maxVal = -std::numeric_limits<double>::infinity();
+    int count = 0;
 
-  // Parcours des noeuds
-  for (int n = 0; n < m_mesh->getNumberOfNodes(); n++) {
-      double value = pnGlobal(n, 1);
+    // Parcours des noeuds
+    for (int n = 0; n < m_mesh->getNumberOfNodes(); n++) {
+        double value = pnGlobal(n, 1);
 
-      sum += value;
-      sumSquared += value * value;
-      if (value < minVal) minVal = value;
-      if (value > maxVal) maxVal = value;
-      count++;
-  }
+        sum += value;
+        sumSquared += value * value;
+        if (value < minVal) minVal = value;
+        if (value > maxVal) maxVal = value;
+        count++;
+    }
 
-  double mean = sum / count;
+    double mean = sum / count;
+    double variance = (sumSquared / count) - (mean * mean);
 
-  double variance = (sumSquared / count) - (mean * mean);
+    std::ostringstream filename;
+    filename << "../data/stats/stats_insitu_" << timestep << ".csv";
 
-  std::cout << "--- Statistiques snapshots"<< "timeStep = " << timestep <<"---\n";
-  std::cout << "Moyenne : " << mean << std::endl;
-  std::cout << "Variance : " << variance << std::endl;
-  std::cout << "Min : " << minVal << std::endl;
-  std::cout << "Max : " << maxVal << std::endl;
-
+    std::ofstream file(filename.str());
+    if (file.is_open()) {
+        // Écriture de l'en-tête
+        file << "timestep,mean,variance,min,max\n";
+        // Écriture des valeurs
+        file << timestep << "," 
+             << mean << "," 
+             << variance << "," 
+             << minVal << "," 
+             << maxVal << "\n";
+        file.close();
+        std::cout << "Stats CSV saved for timestep " << timestep << std::endl;
+    } else {
+        std::cerr << "[Error] Impossible d'ouvrir le fichier : " 
+                  << filename.str() << std::endl;
+    }
 }
