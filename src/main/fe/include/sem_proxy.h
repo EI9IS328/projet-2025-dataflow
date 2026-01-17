@@ -75,6 +75,8 @@ class SEMproxy
   float find_cfl_dt(float cfl_factor);
 
   void saveSnapshot(int timestep);
+  void saveSliceSnapshotBin(int timestep, int dim2Coord);
+  void saveSliceSnapshotPPM(int timestep, int dim2Coord);
   void statsAnalysis(int timestep);
   void computeHistogram(int timestep);
   void computeFourier();
@@ -94,7 +96,8 @@ class SEMproxy
   bool is_snapshots_;
   int snap_time_interval_;
   std::string snap_folder_;
-
+  int slice_snapshots_coords_;
+  bool slice_snapshots_to_PPM_;
   //stat analysis
   bool is_stats_analysis_;
   // histogram computation
