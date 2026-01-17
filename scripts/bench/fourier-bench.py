@@ -102,4 +102,19 @@ print("")
 print("-------------")
 
 data = list(zip(sizes, res_insitu, res_adhoc))
-print(tabulate(data, headers=["Sizes", "Insitu (ms)", "Adhoc (ms)"],tablefmt="github"))
+headers = ["Sizes", "Insitu (ms)", "Adhoc (ms)"]
+
+output_filename = "./data/fourier/resultats_benchmark_fourier.csv"
+
+try:
+    with open(output_filename, mode='w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        
+        writer.writerow(headers)
+        
+        writer.writerows(data)
+        
+    print(f"Succès : Les données ont été exportées dans '{output_filename}'")
+
+except IOError as e:
+    print(f"Erreur lors de l'écriture du fichier : {e}")
