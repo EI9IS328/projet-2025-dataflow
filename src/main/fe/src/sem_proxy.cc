@@ -869,31 +869,43 @@ void SEMproxy::saveSliceSnapshotPPM(int timestep, int dim2Coord) {
 
 
 void SEMproxy::statsAnalysis(int timestep){
-  double sum = 0.0;
-  double sumSquared = 0.0;
-  double minVal = std::numeric_limits<double>::infinity();
-  double maxVal = -std::numeric_limits<double>::infinity();
-  int count = 0;
+    double sum = 0.0;
+    double sumSquared = 0.0;
+    double minVal = std::numeric_limits<double>::infinity();
+    double maxVal = -std::numeric_limits<double>::infinity();
+    int count = 0;
 
-  // Parcours des noeuds
-  for (int n = 0; n < m_mesh->getNumberOfNodes(); n++) {
-      double value = pnGlobal(n, 1);
+    // Parcours des noeuds
+    for (int n = 0; n < m_mesh->getNumberOfNodes(); n++) {
+        double value = pnGlobal(n, 1);
 
-      sum += value;
-      sumSquared += value * value;
-      if (value < minVal) minVal = value;
-      if (value > maxVal) maxVal = value;
-      count++;
-  }
+        sum += value;
+        sumSquared += value * value;
+        if (value < minVal) minVal = value;
+        if (value > maxVal) maxVal = value;
+        count++;
+    }
 
-  double mean = sum / count;
+    double mean = sum / count;
+    double variance = (sumSquared / count) - (mean * mean);
 
-  double variance = (sumSquared / count) - (mean * mean);
+    std::ostringstream filename;
+    filename << "../data/stats/stats_insitu_" << timestep << ".csv";
 
-  std::cout << "--- Statistiques ---\n";
-  std::cout << "Moyenne : " << mean << std::endl;
-  std::cout << "Variance : " << variance << std::endl;
-  std::cout << "Min : " << minVal << std::endl;
-  std::cout << "Max : " << maxVal << std::endl;
-
+    std::ofstream file(filename.str());
+    if (file.is_open()) {
+        // Écriture de l'en-tête
+        file << "timestep,mean,variance,min,max\n";
+        // Écriture des valeurs
+        file << timestep << "," 
+             << mean << "," 
+             << variance << "," 
+             << minVal << "," 
+             << maxVal << "\n";
+        file.close();
+        std::cout << "Stats CSV saved for timestep " << timestep << std::endl;
+    } else {
+        std::cerr << "[Error] Impossible d'ouvrir le fichier : " 
+                  << filename.str() << std::endl;
+    }
 }
