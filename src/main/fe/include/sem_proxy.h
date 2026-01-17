@@ -100,6 +100,7 @@ class SEMproxy
   bool slice_snapshots_to_PPM_;
   //stat analysis
   bool is_stats_analysis_;
+  int stats_analysis_interval; 
   // histogram computation
   bool is_compute_histogram_;
   int compute_histogram_interval;
