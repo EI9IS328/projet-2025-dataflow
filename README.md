@@ -1,40 +1,5 @@
 # FUnTiDES: Fast Unstructured Time Dynamic Equation Solver
 
-**FUnTiDES** is a collection of simplified codes that represent real scientific applications. It serves as a standard tool for evaluating and comparing the performance of various high-performance computing (HPC) systems, particularly those used for scientific simulations.
-
----
-
-## Included Applications
-
-The current implementation includes two proxy applications for solving the 2nd-order acoustic wave equation in 2D and 3D:
-
-- **SEM (Spectral Element Method)**
-  A benchmark designed to simulate wave propagation using SEM, a Galerkin-based finite element method for solving partial differential equations (PDEs).
-
-- **FD (Finite Difference Method)**
-  A benchmark that uses finite-difference stencil operators to simulate wave propagation and solve PDEs.
-
-A key feature of these proxy applications is their adaptability to different programming models and HPC architectures. They are also easy to build and run, making them accessible to both researchers and developers.
-
----
-
-## Supported Programming Models
-
-The SEM proxy currently supports:
-
-- [Kokkos](https://kokkos.github.io/kokkos-core-wiki/) — for performance portability
-
-> **Note**: Kokkos is included as a Git submodule and will be compiled automatically when enabled.
-
----
-
-## Supported Data Containers
-
-The current SEM proxy supports the following data container:
-
-- `std::vector` (default for serial )
-
----
 
 ## Quick Start: Build and Run
 
@@ -48,7 +13,7 @@ git submodule update --init
 ```sh
 mkdir build
 cd build
-cmake -DUSE_KOKKOS=ON -DUSE_VECTOR=OFF ..
+cmake -DENABLE_CUDA=ON -DUSE_KOKKOS=ON -DUSE_VECTOR=OFF ..
 make 
 ```
 
@@ -82,3 +47,18 @@ The following options can be used to configure your build:
 
 ---
 
+## Parameters
+- --snapshot : Enable or disable saving snapshots
+- --sismo-points PATH : Path to sismo receptors points to save
+- --sismo-fourier PATH: Path to sismo receptors points to do fourier on
+- --stats-analysis : Enable stats analysis in-situ
+- --compute-histogram : Enable or disable computing histogram for pressure value distribution
+- --compute-histogram-delay DELAY : Delay between each histogram computation (step (ms) )
+- --sd DELAY : Delay between each snapshot (step (ms) )
+- --slice-snapshot COORD : Enable snapshots at given coordinates. Will use the --snapshot-delay parameter for delay
+- --slice-ppm : Save slice snapshots as PPM format. Saving slice snapshots without this option result in regular save (ASCII format)
+
+
+## Run benchmarks
+
+Commands to run the benchmarks are specified in the PDF report.
