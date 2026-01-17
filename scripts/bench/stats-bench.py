@@ -85,6 +85,7 @@ def run_insitu(size):
         "-o", "2",
         "--ex", str(size), "--ey", str(size), "--ez", str(size),
         "--stats-analysis",
+        "--stats-interval",SNAP_DELAY
     ]
     
     try:
@@ -112,7 +113,8 @@ def run_adhoc(size):
         "--timemax", TIMEMAX, 
         "-o", "2", 
         "--ex", str(size), "--ey", str(size), "--ez", str(size),
-        "-s"  # on sauvegarde les snapshot pour ensuite effectuer notre calcul ad_hoc
+        "-s",  # on sauvegarde les snapshot pour ensuite effectuer notre calcul ad_hoc
+        "--sd", SNAP_DELAY
     ]
     
     try:
