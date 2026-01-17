@@ -23,7 +23,7 @@ def printStderr(stderr):
 def getExecStats(subprocess_stdout):
     for line in subprocess_stdout.splitlines():
         if line.startswith("Exec stats:"):
-            outputPath = line.split(':')[1].strip()
+            outputPath = line.split(':')[1].strip()[1:-1]
     with open(f"{outputPath}", newline="\n") as f:
         reader = csv.DictReader(f)
         row = next(reader)
