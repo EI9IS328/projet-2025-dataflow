@@ -32,7 +32,10 @@ class SemProxyOptions
   bool isStatsAnalysisOn = false;
   int statsAnalysisInterval= 50;
   bool isComputeHistogramOn = false;
+  bool isComputeFourierOn = false;
   int computeHistogramInterval = 150;
+  int sliceSnapshotCoord = -1;
+  bool saveSliceSnapshotToPPM = false; // if false save as bin
 
   void validate() const
   {
@@ -80,11 +83,15 @@ class SemProxyOptions
         cxxopts::value<bool>(o.isModelOnNodes))
         ("s,snapshot","Enable or disable saving snapshots",cxxopts::value<bool>(o.isSnapshotOn))
         ("sismo-points", "Path to sismo receptor points to save", cxxopts::value<std::string>(o.sismoPoints))
+        ("sismo-fourier", "Path to sismo receptor to do fourier", cxxopts::value<bool>(o.isComputeFourierOn))
         ("is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))
         ("stats-analysis", "Enable stats analysis(min ,max, variance, moyenne) during execution", cxxopts::value<bool>(o.isStatsAnalysisOn))
         ("stats-interval", "Delay between each stats analysis (step (ms) )", cxxopts::value<int>(o.statsAnalysisInterval))
         ("compute-histogram","Enable or disable computing histogram for pressure value distribution",cxxopts::value<bool>(o.isComputeHistogramOn))
         ("compute-histogram-delay", "Delay between each histogram computation (step (ms) )", cxxopts::value<int>(o.computeHistogramInterval))
-        ("sd,snapshot-delay", "Delay between each snapshot (step (ms) )", cxxopts::value<int>(o.snap_time_interval));
-  }
+        ("sd,snapshot-delay", "Delay between each snapshot (step (ms) )", cxxopts::value<int>(o.snap_time_interval))
+        ("slice-snapshot", "Enable snapshots at given coordinates. Will use the --snapshot-delay parameter for delay", cxxopts::value<int>(o.sliceSnapshotCoord))
+        ("slice-ppm", "Save slice snapshots as PPM format. Saving slice snapshots without this option result in binary save", cxxopts::value<bool>(o.saveSliceSnapshotToPPM))
+        ;
+  } 
 };
